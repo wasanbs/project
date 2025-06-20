@@ -247,9 +247,6 @@
                 </div>
             </div>
 
-            <p class="text-center max-w-2xl mx-auto mt-8 text-gray-600 font-semibold">
-                *ข้อมูลความคืบหน้าจะถูกอัปเดตบนหน้าเว็บแบบเรียลไทม์เท่านั้น และจะไม่ถูกบันทึกถาวรเมื่อปิดหน้าเว็บ หากต้องการบันทึก/โหลดข้อมูลแผนงาน กรุณาใช้ "เครื่องมือจัดการข้อมูล JSON" แยกต่างหาก โดยการคัดลอกข้อมูล JSON ระหว่างสองแอปพลิเคชันด้วยตนเอง.
-            </p>
         </section>
         
         <!-- Improvements Chart Section -->
@@ -323,131 +320,8 @@
 
 <script type="module">
     // Define global variables to hold loaded data
-    // Data is now embedded directly for self-containment
-    window.upgradeSteps = [
-        {
-            id: 'step-aa',
-            order: 0,
-            title: 'NetIQ Advanced Authentication (AA) Integration',
-            description: 'ตั้งค่าและบูรณาการ NetIQ Advanced Authentication เพื่อรองรับ MFA และ Adaptive Authentication.',
-            assignee: 'ทีม Busisoft',
-            startDate: '2025-04-01',
-            endDate: '2025-04-30',
-            status: 'Completed',
-            lastUpdatedBy: 'System',
-            lastUpdated: '2025-04-30T10:00:00Z'
-        },
-        {
-            id: 'step-1',
-            order: 1,
-            title: 'Clone Current NAM Servers',
-            description: 'โคลนเซิร์ฟเวอร์ NetIQ Access Manager 4.5.3 (SUSE Linux 12 SP4) เพื่อใช้เป็นสภาพแวดล้อมสำหรับการอัปเกรด.',
-            assignee: 'ทีม ไปรษณีย์ไทย',
-            startDate: '2025-06-01',
-            endDate: '2025-06-15',
-            status: 'In Progress',
-            lastUpdatedBy: 'Local User',
-            lastUpdated: new Date().toISOString()
-        },
-        {
-            id: 'step-2',
-            order: 2,
-            title: 'Upgrade SUSE Linux to SP5',
-            description: 'อัปเกรดระบบปฏิบัติการ SUSE Linux จาก SP4 เป็น SP5 บนเซิร์ฟเวอร์ที่โคลนมา.',
-            assignee: 'ทีม ไปรษณีย์ไทย',
-            startDate: '2025-06-16',
-            endDate: '2025-06-30',
-            status: 'Not Started',
-            lastUpdatedBy: 'N/A',
-            lastUpdated: ''
-        },
-        {
-            id: 'step-3',
-            order: 3,
-            title: 'Upgrade NAM to Version 5.1',
-            description: 'อัปเกรด NetIQ Access Manager จากเวอร์ชัน 4.5.3 เป็น 5.1.',
-            assignee: 'ทีม Busisoft',
-            startDate: '2025-07-01',
-            endDate: '2025-07-31',
-            status: 'Not Started',
-            lastUpdatedBy: 'N/A',
-            lastUpdated: ''
-        },
-        {
-            id: 'step-4',
-            order: 4,
-            title: 'Configuration and Testing',
-            description: 'ปรับแต่งการตั้งค่าและดำเนินการทดสอบระบบอย่างละเอียด รวมถึงการทำงานร่วมกับ AA และแอปพลิเคชันต่างๆ.',
-            assignee: 'ทีม Busisoft, ทีม ไปรษณีย์ไทย',
-            startDate: '2025-08-01',
-            endDate: '2025-08-15',
-            status: 'Not Started',
-            lastUpdatedBy: 'N/A',
-            lastUpdated: ''
-        },
-        {
-            id: 'step-5',
-            order: 5,
-            title: 'User Acceptance Testing (UAT)',
-            description: 'ให้ผู้ใช้งานทำการทดสอบระบบเพื่อยืนยันว่าตรงตามความต้องการและทำงานได้อย่างถูกต้อง.',
-            assignee: 'ทีม ไปรษณีย์ไทย',
-            startDate: '2025-08-16',
-            endDate: '2025-08-31',
-            status: 'Not Started',
-            lastUpdatedBy: 'N/A',
-            lastUpdated: ''
-        },
-        {
-            id: 'step-6',
-            order: 6,
-            title: 'Production Deployment',
-            description: 'นำระบบที่อัปเกรดแล้วขึ้นสู่ระบบ Production.',
-            assignee: 'ทีม Busisoft, ทีม ไปรษณีย์ไทย',
-            startDate: '2025-09-01',
-            endDate: '2025-09-15',
-            status: 'Not Started',
-            lastUpdatedBy: 'N/A',
-            lastUpdated: ''
-        }
-    ].sort((a, b) => a.order - b.order); // Sort upon definition
-
-    window.versionDetailsData = [
-        {
-            id: 'nam-5-1',
-            name: 'NetIQ Access Manager 5.1',
-            summary: 'เวอร์ชันล่าสุดที่นำเสนอการปรับปรุงด้านความปลอดภัย ประสิทธิภาพ และคุณสมบัติใหม่ๆ เพื่อประสบการณ์การเข้าถึงที่ดียิ่งขึ้น',
-            details: [
-                'Enhanced security features, including advanced vulnerability fixes.',
-                'Improved performance for faster login and application access.',
-                'New Administration Console with an Angular-based UI.',
-                'Extended REST APIs for better automation and integration.',
-                'Full integration with NetIQ Advanced Authentication for adaptive access and MFA.',
-                'Support for Kerberos Privileged Attribute Certificate (PAC).'
-            ]
-        },
-        {
-            id: 'suse-12-sp5',
-            name: 'SUSE Linux Enterprise Server 12 SP5',
-            summary: 'Service Pack ล่าสุดสำหรับ SUSE Linux 12 ที่มาพร้อมกับการอัปเดตด้านความปลอดภัยและประสิทธิภาพของระบบปฏิบัติการ',
-            details: [
-                'Latest security patches and bug fixes for the operating system.',
-                'Performance enhancements for improved system responsiveness.',
-                'Updated hardware support and drivers.',
-                'Improved stability and reliability for critical enterprise applications.'
-            ]
-        },
-        {
-            id: 'nam-4-5-3',
-            name: 'NetIQ Access Manager 4.5.3 (Current)',
-            summary: 'เวอร์ชันปัจจุบันที่ใช้งานอยู่',
-            details: [
-                'Currently deployed version.',
-                'Running on SUSE Linux Enterprise Server 12 SP4.',
-                'Limited support for modern authentication methods.',
-                'Potential unaddressed security vulnerabilities (e.g., Log4j, XSS) from older components.'
-            ]
-        }
-    ];
+    window.upgradeSteps = [];
+    window.versionDetailsData = [];
 
     // Additional data for the charts and other sections (these can remain embedded as they are static project info)
     window.improvementsChartData = {
@@ -523,17 +397,41 @@
     // --- Function Declarations ---
 
     /**
-     * Initializes the application by rendering all sections with embedded data.
+     * Fetches data from a JSON file and initializes the application.
      */
-    function loadDataAndRenderApp() {
-        // No fetch needed as data is embedded
-        renderProgressTable();
-        renderProjectTimeline();
-        createImprovementsChart();
-        renderVersionSelection();
-        renderBenefits();
-        renderRisks();
-        renderRecommendations();
+    async function loadDataAndRenderApp() {
+        try {
+            // Display loading indicators
+            document.getElementById('progress-table-body').innerHTML = '<tr><td colspan="7" class="text-center py-4 text-gray-500">กำลังโหลดข้อมูล...</td></tr>';
+            document.getElementById('project-timeline').innerHTML = '<div class="text-center py-4 text-gray-500">กำลังโหลดข้อมูล Timeline...</div>';
+            document.getElementById('version-details-display').innerHTML = '<p class="text-gray-500 text-center flex items-center justify-center h-full">กำลังโหลดข้อมูลเวอร์ชัน...</p>';
+
+            // Fetch data from the local JSON file
+            const response = await fetch('./netiq_upgrade_plan_data.json');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status} - Check if 'netiq_upgrade_plan_data.json' is accessible.`);
+            }
+            const data = await response.json();
+
+            window.upgradeSteps = data.upgradeSteps.sort((a, b) => a.order - b.order); // Sort upon loading
+            window.versionDetailsData = data.versionDetailsData;
+
+            // Render all sections with loaded data
+            renderProgressTable();
+            renderProjectTimeline();
+            createImprovementsChart();
+            renderVersionSelection();
+            renderBenefits();
+            renderRisks();
+            renderRecommendations();
+
+        } catch (error) {
+            console.error("Error loading data:", error);
+            // Display error messages
+            document.getElementById('progress-table-body').innerHTML = '<tr><td colspan="7" class="text-center py-4 text-red-500">ข้อผิดพลาดในการโหลดข้อมูล: ' + error.message + '</td></tr>';
+            document.getElementById('project-timeline').innerHTML = '<div class="text-center py-4 text-red-500">ข้อผิดพลาดในการโหลดข้อมูล Timeline: ' + error.message + '</div>';
+            document.getElementById('version-details-display').innerHTML = '<p class="text-red-500 text-center flex items-center justify-center h-full">ข้อผิดพลาดในการโหลดข้อมูลเวอร์ชัน: ' + error.message + '</p>';
+        }
     }
 
 
@@ -645,17 +543,25 @@
         const sortedSteps = [...window.upgradeSteps].sort((a, b) => a.order - b.order);
 
         // Determine overall project start and end dates from task data
-        let projectStartDate = new Date(Math.min(...sortedSteps.map(s => new Date(s.startDate).getTime())));
-        let projectEndDate = new Date(Math.max(...sortedSteps.map(s => new Date(s.endDate).getTime())));
+        // Filter out steps without valid dates to prevent NaN
+        const validDates = sortedSteps.filter(s => s.startDate && s.endDate)
+                                      .flatMap(s => [new Date(s.startDate).getTime(), new Date(s.endDate).getTime()]);
+        
+        let projectStartDate;
+        let projectEndDate;
 
-        // Ensure a reasonable range if dates are very close or invalid
-        if (isNaN(projectStartDate.getTime()) || isNaN(projectEndDate.getTime())) {
-            // Fallback to a fixed default range if dates are invalid
+        if (validDates.length > 0) {
+            projectStartDate = new Date(Math.min(...validDates));
+            projectEndDate = new Date(Math.max(...validDates));
+        } else {
+            // Fallback to a fixed default range if no valid dates are found
             projectStartDate = new Date(2025, 3, 1); // April 1st, 2025
             projectEndDate = new Date(2025, 8, 30); // September 30th, 2025
         }
 
-        // Add a buffer to the end date for better visualization
+        // Add a buffer to the end date for better visualization, ensuring at least to September 30th
+        const minProjectEndDate = new Date(2025, 8, 30); // September 30th, 2025
+        projectEndDate = new Date(Math.max(projectEndDate.getTime(), minProjectEndDate.getTime()));
         projectEndDate.setDate(projectEndDate.getDate() + 30); // Add 30 days buffer
 
         const totalProjectDurationDays = (projectEndDate.getTime() - projectStartDate.getTime()) / (1000 * 60 * 60 * 24);
@@ -667,17 +573,20 @@
         let currentMonth = new Date(projectStartDate.getFullYear(), projectStartDate.getMonth(), 1);
         const monthFormat = { month: 'short', year: 'numeric' };
         let axisContent = '';
-        let currentAxisPosition = 0;
 
         while (currentMonth.getTime() <= projectEndDate.getTime()) {
             const nextMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
-            // Calculate the start of the next month. If it's past the project end date, cap it.
-            const endOfPeriod = Math.min(nextMonth.getTime(), projectEndDate.getTime());
-            const monthDurationDays = (endOfPeriod - currentMonth.getTime()) / (1000 * 60 * 60 * 24);
+            // Calculate the duration for the current month segment
+            const startOfSegment = Math.max(currentMonth.getTime(), projectStartDate.getTime());
+            const endOfSegment = Math.min(nextMonth.getTime(), projectEndDate.getTime());
+            
+            const monthDurationDays = (endOfSegment - startOfSegment) / (1000 * 60 * 60 * 24);
             
             const monthWidthPx = monthDurationDays * pixelsPerDay;
 
-            axisContent += `<div class="timeline-axis-month" style="width: ${monthWidthPx}px;">${currentMonth.toLocaleString('th-TH', monthFormat)}</div>`;
+            if (monthWidthPx > 0) { // Only render if there's a positive width
+                axisContent += `<div class="timeline-axis-month" style="width: ${monthWidthPx}px;">${currentMonth.toLocaleString('th-TH', monthFormat)}</div>`;
+            }
             currentMonth = nextMonth;
         }
         timelineAxisContainer.innerHTML = axisContent;
@@ -702,6 +611,15 @@
             const bar = document.createElement('div');
             const stepStartDate = new Date(step.startDate);
             const stepEndDate = new Date(step.endDate);
+
+            // Only render bar if dates are valid
+            if (isNaN(stepStartDate.getTime()) || isNaN(stepEndDate.getTime())) {
+                console.warn(`Skipping timeline bar for task ${step.id} due to invalid dates.`);
+                // Optionally add a placeholder or skip this track altogether
+                // track.appendChild(document.createTextNode('Invalid dates for this task.'));
+                timelineTracks.appendChild(track); // Still append the track with just the label
+                return;
+            }
 
             // Calculate position and width relative to the overall project duration
             const offsetDays = (stepStartDate.getTime() - projectStartDate.getTime()) / (1000 * 60 * 60 * 24);
