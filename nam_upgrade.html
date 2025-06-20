@@ -35,21 +35,9 @@
         .bg-light-blue { background-color: #E3F2FD; } /* Material Blue 50 */
         .text-light-blue { color: #E3F2FD; }
 
-        .chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 450px;
-            height: 300px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        @media (min-width: 768px) {
-            .chart-container {
-                height: 400px;
-            }
-        }
         .nav-link {
             transition: color 0.3s, border-bottom-color 0.3s;
+            font-weight: 600; /* Make navigation links bold */
         }
         .nav-link:hover {
             color: #2196F3; /* Medium Blue on hover */
@@ -85,7 +73,7 @@
             margin-bottom: 10px;
             font-size: 0.875rem; /* text-sm */
             color: #6b7280; /* gray-500 */
-            padding-left: 210px; /* Space for labels */
+            padding-left: 270px; /* Adjusted space for labels to align axis */
             padding-right: 10px;
         }
         .timeline-track {
@@ -99,16 +87,17 @@
         }
         .timeline-label-area {
             flex-shrink: 0;
-            width: 200px; /* Fixed width for the label area */
+            width: 250px; /* Fixed width for the label area */
             padding-left: 10px; /* Padding from the left edge of the track */
             padding-right: 10px; /* Padding between label and bar area */
-            text-align: right; /* Align text to the right for clarity */
+            text-align: left; /* Align text to the left for clarity */
             font-size: 0.875rem; /* text-sm */
             color: #3f3f46; /* text-gray-800 */
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            white-space: normal; /* Allow text to wrap */
+            overflow: visible; /* Ensure text is not hidden */
+            text-overflow: unset; /* Prevent ellipsis */
             box-sizing: border-box;
+            word-break: break-word; /* Break long words */
         }
         .timeline-chart-area {
             flex-grow: 1;
@@ -131,6 +120,22 @@
         .timeline-bar.status-NotStarted { background-color: #9ca3af; /* gray-400 */ }
         .timeline-bar.status-InProgress { background-color: #2196F3; /* medium-blue */ }
         .timeline-bar.status-Completed { background-color: #10b981; /* green-500 */ }
+
+        /* Version Details styles */
+        .version-card {
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .version-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .version-card.active {
+            border-color: #0D94E8;
+            background-color: #E3F2FD;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -143,6 +148,7 @@
                 <a href="#overview" class="nav-link border-b-2 border-transparent">ภาพรวม</a>
                 <a href="#progress" class="nav-link border-b-2 border-transparent">ความคืบหน้า</a>
                 <a href="#improvements" class="nav-link border-b-2 border-transparent">การปรับปรุง</a>
+                <a href="#version-details" class="nav-link border-b-2 border-transparent">รายละเอียดเวอร์ชัน</a>
                 <a href="#benefits" class="nav-link border-b-2 border-transparent">ประโยชน์</a>
                 <a href="#risks" class="nav-link border-b-2 border-transparent">ความเสี่ยง</a>
                 <a href="#approval" class="nav-link border-b-2 border-transparent">ข้อเสนอแนะ</a>
@@ -237,6 +243,17 @@
             </div>
         </section>
 
+        <!-- Version Details Section -->
+        <section id="version-details" class="mb-20 pt-16 -mt-16">
+            <h2 class="text-3xl font-bold text-center mb-12">รายละเอียดเวอร์ชันระบบ</h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8" id="version-selection-area">
+                <!-- Version selection cards will be rendered here by JS -->
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md border border-gray-100 min-h-[300px]" id="version-details-display">
+                <p class="text-gray-500 text-center flex items-center justify-center h-full">กรุณาเลือกเวอร์ชันเพื่อดูรายละเอียด...</p>
+            </div>
+        </section>
+
         <!-- Benefits Section -->
         <section id="benefits" class="mb-20 pt-16 -mt-16">
             <h2 class="text-3xl font-bold text-center mb-12">ประโยชน์ที่คาดว่าจะได้รับ</h2>
@@ -277,7 +294,7 @@
     <footer class="bg-gray-800 text-white mt-20">
         <div class="container mx-auto px-6 py-4 text-center text-sm">
             <p>โครงการบริการบำรุงรักษาระบบบริหารจัดการการเข้าถึงระบบสารสนเทศ ปณท (IDM)</p>
-            <p>สัญญาเลขที่: สป(ส) 106/2567 | วันที่: 20 มิถุนายน 2568</p>
+            <p>Lastupdate | วันที่: 20 มิถุนายน 2568</p>
         </div>
     </footer>
 
@@ -327,7 +344,7 @@
             description: 'Single Sign-On (SSO) ที่มีประสิทธิภาพช่วยให้ผู้ใช้เข้าถึงแอปพลิเคชันต่างๆ ได้อย่างราบรื่นและสะดวกสบาย'
         },
         {
-            icon: '�',
+            icon: '🌍',
             title: 'รองรับการทำงานยุคใหม่',
             description: 'การเพิ่ม AA ช่วยให้รองรับการทำงานนอกสถานที่ (Mobile Workforce) และการ Login แบบ Offline ได้อย่างปลอดภัย'
         },
@@ -361,6 +378,61 @@
         "การทดสอบในสภาพแวดล้อมแยกควรครอบคลุมทุกด้าน ทั้งการทำงาน ประสิทธิภาพ และความปลอดภัย เพื่อให้มั่นใจก่อนนำไปใช้จริง",
         "ควรมีการสื่อสารที่ชัดเจนไปยังผู้ใช้งานเกี่ยวกับประโยชน์และการเปลี่ยนแปลงที่อาจเกิดขึ้น โดยเฉพาะการนำ MFA มาใช้",
         "หลังการอัปเกรด ควรมีการตรวจสอบประสิทธิภาพและความปลอดภัยของระบบอย่างต่อเนื่อง เพื่อให้มั่นใจว่าระบบทำงานได้ตามที่คาดหวัง"
+    ];
+
+    // New data structure for version details
+    const versionDetailsData = [
+        {
+            id: "aa",
+            name: "NetIQ Advanced Authentication (AA)",
+            summary: "NetIQ Advanced Authentication (AA) ได้รับการติดตั้งและปรับแต่งเพื่อเพิ่มความสามารถในการยืนยันตัวตนขั้นสูง",
+            details: [
+                "รองรับ Multi-Factor Authentication (MFA) หลากหลายรูปแบบ",
+                "เพิ่ม Adaptive Authentication เพื่อปรับระดับความปลอดภัยตามบริบทการเข้าถึง",
+                "ปรับปรุงประสบการณ์การเข้าสู่ระบบที่ปลอดภัยและยืดหยุ่น"
+            ]
+        },
+        {
+            id: "v4.5.3",
+            name: "NetIQ Access Manager 4.5.3",
+            summary: "เวอร์ชันปัจจุบันของ NAM ที่กำลังใช้งานอยู่",
+            details: [
+                "ทำงานบนระบบปฏิบัติการ SUSE Linux 12 SP4",
+                "อาจมีช่องโหว่ความปลอดภัยที่ยังไม่ถูกแก้ไข (EOL approaching for components)",
+                "คุณสมบัติและส่วนประกอบพื้นฐานเริ่มล้าสมัย"
+            ]
+        },
+        {
+            id: "v4.5.5",
+            name: "NetIQ Access Manager 4.5.5 (Patch)",
+            summary: "การอัปเกรดแพตช์แรกเพื่อปรับปรุงพื้นฐานและแก้ไขช่องโหว่เร่งด่วน",
+            details: [
+                "อัปเดต Tomcat 8.5.72, OpenSSL 1.0.2za, Apache 2.4.51",
+                "แก้ไขปัญหาความปลอดภัยเกี่ยวกับอักขระพิเศษ (Special Character Handling)",
+                "แก้ไขปัญหา SAML (Security Assertion Markup Language)"
+            ]
+        },
+        {
+            id: "v5.0.3",
+            name: "NetIQ Access Manager 5.0.3",
+            summary: "การอัปเกรดเวอร์ชันหลักที่มาพร้อมคุณสมบัติใหม่และการแก้ไขช่องโหว่ร้ายแรง",
+            details: [
+                "รองรับ Kerberos Privileged Attribute Certificate (PAC)",
+                "แก้ไขช่องโหว่ร้ายแรง Log4j (CVE-2021-44228)",
+                "แก้ไขช่องโหว่ Multiple XSS (CVE-2022-26325)",
+                "อัปเดต Tomcat 9.0.65, Apache 2.4.54"
+            ]
+        },
+        {
+            id: "v5.1",
+            name: "NetIQ Access Manager 5.1 (Target Version)",
+            summary: "เวอร์ชันเป้าหมายที่มีการปรับปรุงครั้งใหญ่ด้านการจัดการ ความปลอดภัย และ REST APIs",
+            details: [
+                "หน้าจอจัดการใหม่ (Enhanced Administration Console) บน Angular UI",
+                "ปรับปรุง REST APIs สำหรับการทำงานอัตโนมัติ (Automation) และการเชื่อมต่อ",
+                "แก้ไขช่องโหว่ Directory traversal, User impersonation, และ Multiple XSS เพิ่มเติม"
+            ]
+        }
     ];
 
     // --- Function Declarations ---
@@ -481,7 +553,7 @@
         projectEndDate.setDate(projectEndDate.getDate() + 14);
 
         const totalProjectDurationMs = projectEndDate.getTime() - projectStartDate.getTime();
-        const timelineChartAreaWidthPx = 1000; // Fixed width for the chart area within the timeline
+        const timelineChartAreaWidthPx = 800; // Reverted to smaller width for main chart area
 
         // Render Axis (monthly labels)
         let currentMonth = new Date(projectStartDate.getFullYear(), projectStartDate.getMonth(), 1);
@@ -539,7 +611,7 @@
             timelineTracks.appendChild(track); // Add the track to the container
         });
         // Adjust overall timelineTracks width for horizontal scrolling if needed (total width of labels + chart area)
-        timelineTracks.style.width = `calc(200px + ${timelineChartAreaWidthPx}px)`; // 200px for label area + chart area width
+        timelineTracks.style.width = `calc(250px + ${timelineChartAreaWidthPx}px)`; // 250px for label area + chart area width
 
     }
     window.renderProjectTimeline = renderProjectTimeline; // Expose to window
@@ -624,7 +696,7 @@
             case 'คุณสมบัติใหม่':
                 content += `
                     <li>หน้าจอจัดการผู้ดูแลระบบ (Administration Console) ที่ทันสมัยขึ้นบน Angular UI</li>
-                    <li>ปรับปรุงและเพิ่มประสิทธิภาพ REST APIs สำหรับการทำงานแบบ Automation</li>
+                    <li>ปรับปรุงและเพิ่มประสิทธิภาพ REST APIs สำหรับการทำงานอัตโนมัติ</li>
                     <li>รองรับ Kerberos Privileged Attribute Certificate (PAC)</li>
                     <li>บูรณาการกับ NetIQ Advanced Authentication (AA) ได้อย่างสมบูรณ์แบบ</li>
                 `;
@@ -636,6 +708,61 @@
         container.innerHTML = content;
     }
     window.updateImprovementsDetails = updateImprovementsDetails; // Expose to window
+
+    /**
+     * Renders the version selection cards.
+     */
+    function renderVersionSelection() {
+        const selectionArea = document.getElementById('version-selection-area');
+        if (!selectionArea) return;
+        selectionArea.innerHTML = versionDetailsData.map(version => `
+            <div class="bg-white p-4 rounded-lg shadow-md border border-gray-200 version-card" 
+                 data-version-id="${version.id}"
+                 onclick="window.displayVersionDetails('${version.id}', this)">
+                <h3 class="text-lg font-semibold text-gray-800 mb-1">${version.name}</h3>
+                <p class="text-sm text-gray-600">${version.summary}</p>
+            </div>
+        `).join('');
+    }
+    window.renderVersionSelection = renderVersionSelection; // Expose to window
+
+    /**
+     * Displays the details of a selected version.
+     * @param {string} versionId - The ID of the version to display.
+     * @param {HTMLElement} clickedElement - The HTML element that was clicked.
+     */
+    function displayVersionDetails(versionId, clickedElement) {
+        const displayArea = document.getElementById('version-details-display');
+        if (!displayArea) return;
+
+        // Remove active class from all version cards
+        document.querySelectorAll('.version-card').forEach(card => {
+            card.classList.remove('active');
+        });
+        // Add active class to the clicked card
+        if (clickedElement) {
+            clickedElement.classList.add('active');
+        }
+
+        const selectedVersion = versionDetailsData.find(v => v.id === versionId);
+
+        if (selectedVersion) {
+            let content = `
+                <h3 class="font-bold text-xl mb-4 text-primary-blue">${selectedVersion.name}</h3>
+                <p class="text-gray-700 mb-4">${selectedVersion.summary}</p>
+                <h4 class="font-semibold text-lg text-gray-800 mb-2">รายละเอียด:</h4>
+                <ul class="list-disc list-inside text-gray-700 space-y-2">
+            `;
+            selectedVersion.details.forEach(detail => {
+                content += `<li>${detail}</li>`;
+            });
+            content += `</ul>`;
+            displayArea.innerHTML = content;
+        } else {
+            displayArea.innerHTML = `<p class="text-red-500 text-center">ไม่พบรายละเอียดสำหรับเวอร์ชันนี้</p>`;
+        }
+    }
+    window.displayVersionDetails = displayVersionDetails; // Expose to window
 
     /**
      * Renders the benefits section.
@@ -692,6 +819,7 @@
         renderProgressTable();
         renderProjectTimeline();
         createImprovementsChart();
+        renderVersionSelection(); // Render version selection cards
         renderBenefits();
         renderRisks();
         renderRecommendations();
@@ -743,4 +871,3 @@
 </script>
 </body>
 </html>
-�
