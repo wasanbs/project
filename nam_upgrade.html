@@ -195,7 +195,7 @@
                     <ul class="space-y-3 text-gray-700">
                         <li class="flex items-start"><span class="text-blue-500 mr-3 mt-1">●</span><div><span class="font-normal"><strong>NetIQ Access Manager (NAM):</strong> เวอร์ชัน 4.5.3, ระบบปฏิบัติการ SUSE Linux 12 SP4</span></div></li>
                         <li class="flex items-start"><span class="text-blue-500 mr-3 mt-1">●</span><div><span class="font-normal"><strong>สถานะ NAM:</strong> <span class="font-bold text-blue-700">อยู่ระหว่างการ Clone Server</span> (เริ่มต้นขั้นตอนที่ 1)</span></div></li>
-                        <li class="flex items-start"><span class="text-blue-500 mr-3 mt-1">●</span><div><span class="font-normal"><strong>NetIQ Advanced Authentication (AA):</strong> <span class="font-bold text-green-600">ดำเนินการเสร็จสิ้นเรียบร้อยแล้ว</span></span></div></li>
+                        <li class="flex items-start"><span class="text-blue-500 mr-3 mt-1">●</span><div><span class="font-normal"><strong>NetIQ Advanced Authentication (AA):</b> <span class="font-bold text-green-600">ดำเนินการเสร็จสิ้นเรียบร้อยแล้ว</span></span></div></li>
                         <li class="flex items-start"><span class="text-blue-500 mr-3 mt-1">●</span><div><span class="font-normal"><strong>ข้อจำกัดเดิม:</strong> อาจมีช่องโหว่ความปลอดภัยที่ยังไม่ถูกแก้ไข, ขาดคุณสมบัติใหม่ๆ, และส่วนประกอบพื้นฐานเริ่มล้าสมัย</span></div></li>
                     </ul>
                 </div>
@@ -414,7 +414,25 @@
             const data = await response.json();
 
             window.upgradeSteps = data.upgradeSteps.sort((a, b) => a.order - b.order); // Sort upon loading
-            window.versionDetailsData = data.versionDetailsData;
+            
+            // Map version details from JSON to ensure Thai details
+            window.versionDetailsData = data.versionDetailsData.map(version => {
+                let detailsInThai;
+                // Use the details provided in the JSON if they are Thai, otherwise use the summary
+                // For 'aa', 'v5.1' specifically use the full Thai details from JSON
+                if (version.id === 'aa' || version.id === 'v5.1' || version.id === 'v4.5.3' || version.id === 'v4.5.5' || version.id === 'v5.0.3' || version.id === 'suse-12-sp5') {
+                    detailsInThai = version.details;
+                } else {
+                    detailsInThai = [version.summary]; // Fallback if no specific details are provided
+                }
+                return {
+                    id: version.id,
+                    name: version.name,
+                    summary: version.summary,
+                    details: detailsInThai
+                };
+            });
+
 
             // Render all sections with loaded data
             renderProgressTable();
@@ -424,6 +442,24 @@
             renderBenefits();
             renderRisks();
             renderRecommendations();
+
+            // Set initial selections after all rendering is done
+            updateImprovementsDetails('ความปลอดภัย');
+            
+            // To set the initial active card for version details, we need to manually call displayVersionDetails
+            // and pass the element for it to apply the 'active' class correctly.
+            // This needs to be done *after* renderVersionSelection has created the elements.
+            const initialVersionCard = document.querySelector(`[data-version-id="v5.1"]`);
+            if (initialVersionCard) {
+                displayVersionDetails('v5.1', initialVersionCard);
+            } else {
+                // Fallback if v5.1 is not found, select 'aa' instead
+                const aaVersionCard = document.querySelector(`[data-version-id="aa"]`);
+                 if (aaVersionCard) {
+                    displayVersionDetails('aa', aaVersionCard);
+                 }
+            }
+
 
         } catch (error) {
             console.error("Error loading data:", error);
@@ -769,9 +805,15 @@
         document.querySelectorAll('.version-card').forEach(card => {
             card.classList.remove('active');
         });
-        // Add active class to the clicked card
+        // Add active class to the clicked card if provided
         if (clickedElement) {
             clickedElement.classList.add('active');
+        } else {
+            // If no clickedElement is provided (e.g., on initial load), find it
+            const cardToActivate = document.querySelector(`[data-version-id="${versionId}"]`);
+            if (cardToActivate) {
+                cardToActivate.classList.add('active');
+            }
         }
 
         const selectedVersion = window.versionDetailsData.find(v => v.id === versionId);
