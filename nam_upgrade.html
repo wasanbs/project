@@ -9,15 +9,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Chosen Palette: Busisoft Blue Theme - Primary: #0D94E8, Medium: #2196F3, Light: #E3F2FD -->
-    <!-- Application Structure Plan: Reverted to the structure of V3, now with all data directly embedded in the HTML/JavaScript. No Firebase integration for persistence. Features overview, interactive progress table (local updates only), visual timeline, and a simple doughnut chart for improvements categories. This version prioritizes offline usability and direct embedability. -->
-    <!-- Visualization & Content Choices: 
-        1. Upgrade Path & Progress Table: Sequential upgrade steps with dates/status. Goal -> Track real-time progress. Viz/Method -> Dynamic HTML Table with input fields (date, select). Interaction -> Users can update dates/status which are saved locally (not persistent). Justification -> Provides interactive tracking without external dependencies. Library -> Vanilla JS + Tailwind CSS.
-        2. Project Timeline (Visual Gantt-like): Task durations and sequence. Goal -> Provide visual overview of project plan and timeline. Viz/Method -> Custom HTML/CSS/JS timeline with dynamic bar widths and positions. Interaction -> Visually represents progress, updates based on local table changes. Justification -> Fulfills user request for a "project plan with timeline". Library -> Vanilla JS + Tailwind CSS.
-        3. Version Improvements: Features/fixes in each patch. Goal -> Summarize and compare improvements. Viz/Method -> Doughnut Chart (Chart.js) for categories (Security, Performance, Features). Interaction -> Clicking a chart segment filters a detailed list below. Justification -> Provides a quick visual summary of gains and allows users to drill down into areas of interest. Library -> Chart.js.
-        4. Benefits/Risks/Recommendations: Textual lists of pros and cons. Goal -> Inform clearly. Viz/Method -> Card-based grid layout for benefits, two-column layout for risks/recommendations. Interaction -> Minimal, focus on readability. Justification -> Organizes qualitative information for easy scanning and comprehension. Library -> Tailwind CSS.
-        All textual content and task data are hardcoded directly into JavaScript arrays/objects. -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body {
             font-family: 'Sarabun', sans-serif;
@@ -59,59 +50,87 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Timeline specific styles */
+        /* Timeline specific styles - Reverted to a simpler, more robust flexbox approach */
         .project-timeline {
             position: relative;
             width: 100%;
-            overflow-x: auto;
+            overflow-x: auto; /* Enables horizontal scrolling */
             padding-bottom: 20px;
             margin-top: 20px;
         }
-        .timeline-axis {
+        .timeline-header {
             display: flex;
-            justify-content: space-between;
             margin-bottom: 10px;
             font-size: 0.875rem; /* text-sm */
             color: #6b7280; /* gray-500 */
-            padding-left: 270px; /* Adjusted space for labels to align axis */
-            padding-right: 10px;
+        }
+        .timeline-header-spacer {
+            flex-shrink: 0;
+            width: 270px; /* Matches label area width */
+        }
+        .timeline-axis-content {
+            display: flex;
+            flex-grow: 1;
+            justify-content: space-between;
+            box-sizing: border-box;
+            padding-right: 10px; /* Match right padding of bars */
+        }
+        .timeline-axis-month {
+            text-align: center;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+        .timeline-tracks-container {
+            /* This div wraps all individual timeline tracks */
+            /* Its width will be set by JS to enable scrolling */
         }
         .timeline-track {
-            display: flex;
+            display: flex; /* Use flex for label + chart area */
             align-items: center;
             height: 40px;
             margin-bottom: 10px;
             background-color: #f3f4f6; /* gray-100 */
             border-radius: 5px;
-            position: relative;
+            box-sizing: border-box;
+            /* width will be set by JS */
         }
         .timeline-label-area {
             flex-shrink: 0;
             width: 250px; /* Fixed width for the label area */
-            padding-left: 10px; /* Padding from the left edge of the track */
-            padding-right: 10px; /* Padding between label and bar area */
-            text-align: left; /* Align text to the left for clarity */
-            font-size: 0.875rem; /* text-sm */
-            color: #3f3f46; /* text-gray-800 */
-            white-space: normal; /* Allow text to wrap */
-            overflow: visible; /* Ensure text is not hidden */
-            text-overflow: unset; /* Prevent ellipsis */
+            padding-left: 10px;
+            padding-right: 10px;
+            text-align: right; /* Align text to the right for clarity */
+            font-size: 0.875rem;
+            color: #3f3f46;
+            white-space: normal;
+            overflow: hidden;
+            text-overflow: ellipsis;
             box-sizing: border-box;
-            word-break: break-word; /* Break long words */
+            word-break: break-word;
+            display: flex; /* For vertical centering */
+            align-items: center;
+            justify-content: flex-end;
+            background-color: #e6eeff; /* Light blue for labels */
+            border-top-left-radius: 5px;
+            border-bottom-left-radius: 5px;
         }
         .timeline-chart-area {
-            flex-grow: 1;
+            flex-grow: 1; /* Takes remaining space in flex container */
             position: relative; /* Container for absolute positioned bars */
             height: 100%; /* Take full height of track */
+            min-width: 0; /* Allows shrinking in flex context */
+            box-sizing: border-box;
         }
         .timeline-bar {
             height: 30px;
             border-radius: 3px;
             position: absolute; /* Positioned within timeline-chart-area */
+            top: 50%; /* Center vertically */
+            transform: translateY(-50%); /* Adjust for its own height */
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.75rem; /* text-xs */
+            font-size: 0.75rem;
             color: white;
             padding: 0 5px;
             box-shadow: 0 1px 2px rgba(0,0,0,0.1);
@@ -121,7 +140,19 @@
         .timeline-bar.status-InProgress { background-color: #2196F3; /* medium-blue */ }
         .timeline-bar.status-Completed { background-color: #10b981; /* green-500 */ }
 
-        /* Version Details styles */
+        /* Other section styles remain the same */
+        th {
+            white-space: nowrap;
+            padding: 12px 24px;
+        }
+        td {
+            padding: 16px 24px;
+        }
+        #progress-table-body td:nth-child(2) {
+            white-space: normal;
+            word-break: break-word;
+            min-width: 400px;
+        }
         .version-card {
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
@@ -187,7 +218,7 @@
                     </ul>
                 </div>
             </div>
-             <p class="text-center mt-8 text-gray-600">โครงการนี้มีเป้าหมายเพื่อทำให้ระบบจัดการการเข้าถึง (NAM) ของไปรษณีย์ไทยทันสมัยขึ้น เพื่อให้ระบบมีความปลอดภัยและทำงานได้ดียิ่งขึ้น นอกจากนี้ เราจะเพิ่ม NetIQ Advanced Authentication (AA) เข้ามา เพื่อเสริมความปลอดภัยในการยืนยันตัวตนให้มีหลายชั้น (MFA) และสามารถปรับระดับความปลอดภัยตามความเสี่ยงได้</p>
+            <p class="text-center mt-8 text-gray-600">โครงการนี้มีเป้าหมายเพื่อทำให้ระบบจัดการการเข้าถึง (NAM) ของไปรษณีย์ไทยทันสมัยขึ้น เพื่อให้ระบบมีความปลอดภัยและทำงานได้ดียิ่งขึ้น นอกจากนี้ เราจะเพิ่ม NetIQ Advanced Authentication (AA) เข้ามา เพื่อเสริมความปลอดภัยในการยืนยันตัวตนให้มีหลายชั้น (MFA) และสามารถปรับระดับความปลอดภัยตามความเสี่ยงได้</p>
         </section>
 
         <!-- Progress Tracking Section -->
@@ -215,16 +246,22 @@
 
             <h3 class="text-2xl font-bold text-center mt-12 mb-8">แผนภาพ Timeline โครงการ</h3>
             <div id="project-timeline" class="relative bg-white rounded-xl shadow-lg border border-gray-100 p-6 overflow-hidden">
-                <!-- Timeline will be rendered here by JS -->
+                <!-- Outer container to enable scrolling for the entire timeline chart -->
                 <div class="project-timeline">
-                    <div id="timeline-axis" class="timeline-axis"></div>
-                    <div id="timeline-tracks">
-                        <!-- Task tracks and bars -->
+                    <!-- Header for the timeline chart area -->
+                    <div class="timeline-header">
+                        <div class="timeline-header-spacer"></div> <!-- Spacer for labels -->
+                        <div id="timeline-axis-content" class="timeline-axis-content">
+                            <!-- Month labels will be injected here -->
+                        </div>
+                    </div>
+                    <!-- Container for all task tracks -->
+                    <div id="timeline-tracks-container" class="timeline-tracks-container">
+                        <!-- Individual timeline tracks will be injected here -->
                     </div>
                 </div>
             </div>
 
-        
         </section>
         
         <!-- Improvements Chart Section -->
@@ -245,8 +282,7 @@
         <section id="version-details" class="mb-20 pt-16 -mt-16">
             <h2 class="text-3xl font-bold text-center mb-12">รายละเอียดเวอร์ชันระบบ</h2>
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8" id="version-selection-area">
-                <!-- Version selection cards will be rendered here by JS -->
-            </div>
+                </div>
             <div class="bg-white p-6 rounded-lg shadow-md border border-gray-100 min-h-[300px]" id="version-details-display">
                 <p class="text-gray-500 text-center flex items-center justify-center h-full">กรุณาเลือกเวอร์ชันเพื่อดูรายละเอียด...</p>
             </div>
@@ -256,16 +292,14 @@
         <section id="benefits" class="mb-20 pt-16 -mt-16">
             <h2 class="text-3xl font-bold text-center mb-12">ประโยชน์ที่คาดว่าจะได้รับ</h2>
             <div id="benefits-container" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Benefits will be generated by JavaScript -->
-            </div>
+                </div>
         </section>
 
         <!-- Risks Section -->
         <section id="risks" class="mb-20 pt-16 -mt-16">
             <h2 class="text-3xl font-bold text-center mb-12">ผลกระทบและความเสี่ยงที่อาจเกิดขึ้น</h2>
             <div id="risks-container" class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-lg border border-gray-100 space-y-6">
-                <!-- Risks will be generated by JavaScript -->
-            </div>
+                </div>
         </section>
 
         <!-- Approval Section -->
@@ -274,8 +308,7 @@
             <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-lg border border-gray-100">
                 <h3 class="text-2xl font-semibold mb-6">ข้อแนะนำเพื่อความสำเร็จของโครงการ</h3>
                 <div id="recommendations-container" class="space-y-4">
-                     <!-- Recommendations will be generated by JavaScript -->
-                </div>
+                     </div>
                 <div class="mt-12 pt-8 border-t">
                     <h3 class="text-2xl font-semibold mb-4 text-center">การอนุมัติ (บริษัท ไปรษณีย์ไทย จำกัด)</h3>
                     <div class="flex flex-wrap justify-center gap-4 mt-6">
@@ -301,12 +334,12 @@
     // Make upgradeSteps a global variable or accessible via window for updateTaskDataAndRenderUI and file operations
     window.upgradeSteps = [ // This array will be updated locally, but not persistently saved
         { id: "step-aa", title: "ติดตั้งและปรับแต่ง NetIQ (AA)", description: "ดำเนินการติดตั้งและปรับแต่ง NetIQ Advanced Authentication เพื่อรองรับการยืนยันตัวตนแบบ MFA และ Adaptive Authentication", version: "AA", startDate: "2025-05-01", endDate: "2025-05-20", status: "Completed", assignee: "Busisoft", order: 0 }, // New AA task
-        { id: "step-1", title: "Clone ระบบ NAM ทั้งหมด", description: "สร้างสำเนาของระบบ NAM ปัจจุบัน (v4.5.3) ไปยังสภาพแวดล้อมทดสอบที่แยกออกมา เพื่อให้เราอัปเกรดและทดสอบได้อย่างปลอดภัย ไม่กระทบการทำงานปกติ", version: "v4.5.3", startDate: "2025-06-01", endDate: "2025-06-01", status: "In Progress", assignee: "THP", order: 1 },
-        { id: "step-2", title: "อัปเกรด NAM เป็น v4.5.5", description: "อัปเกรด NAM ในระบบแยกเป็น v4.5.5 เพื่อปรับปรุงส่วนประกอบพื้นฐานและแก้ไขปัญหาด้านความปลอดภัยบางประการ", details: ["อัปเดต Tomcat 8.5.72, OpenSSL 1.0.2za, Apache 2.4.51", "แก้ไขปัญหาความปลอดภัยเกี่ยวกับอักขระพิเศษและ SAML"], version: "v4.5.5", startDate: "2025-06-20", endDate: "2025-06-20", status: "Not Started", assignee: "Busisoft", order: 2 },
-        { id: "step-3", title: "อัปเกรด SUSE Linux เป็น 12 SP5", description: "การอัปเกรดระบบปฏิบัติการ SUSE Linux เป็น 12 SP5 เป็นสิ่งจำเป็นก่อนอัปเกรด NAM ไป v5.x เพื่อให้ระบบเข้ากันได้ดีและทำงานได้ราบรื่น", details: ["เป็นข้อกำหนดสำคัญ (Prerequisite) สำหรับ NAM v5.x", "ป้องกันปัญหาทางเทคนิคและความเข้ากันได้ของระบบ"], version: "SUSE Linux 12 SP5", startDate: "2025-06-30", endDate: "2025-06-30", status: "Not Started", assignee: "Busisoft", order: 3 },
-        { id: "step-4", title: "อัปเกรด NAM เป็น v5.0.3", description: "อัปเกรด NAM ในระบบแยกเป็น v5.0.3 ซึ่งมาพร้อมคุณสมบัติใหม่และการแก้ไขช่องโหว่ที่สำคัญ", details: ["รองรับ Kerberos Privileged Attribute Certificate (PAC)", "แก้ไขช่องโหว่ร้ายแรง Log4j และ Multiple XSS (CVE-2022-26325)", "อัปเดต Tomcat 9.0.65, Apache 2.4.54"], version: "v5.0.3", startDate: "2025-07-01", endDate: "2025-07-10", status: "Not Started", assignee: "Busisoft", order: 4 },
-        { id: "step-5", title: "อัปเกรด NAM เป็น v5.1", description: "อัปเกรดสู่เวอร์ชันเป้าหมาย v5.1 ที่มีการปรับปรุงครั้งใหญ่ด้านการจัดการและความปลอดภัย", details: ["หน้าจอจัดการใหม่ (Enhanced Administration Console) บน Angular UI", "ปรับปรุง REST APIs สำหรับการทำงานอัตโนมัติ", "แก้ไขช่องโหว่ Directory traversal, User impersonation และ Multiple XSS"], version: "v5.1", startDate: "2025-07-11", endDate: "2025-07-20", status: "Not Started", assignee: "Busisoft", order: 5 },
-        { id: "step-6", title: "ตรวจสอบและทดสอบระบบ", description: "ตรวจสอบและทดสอบระบบ NAM ที่อัปเกรดแล้วอย่างละเอียดในระบบแยก เพื่อให้แน่ใจว่าทุกอย่างทำงานถูกต้องและเสถียร ก่อนที่จะนำไปใช้งานจริง", version: "v5.1", startDate: "2025-07-21", endDate: "2025-07-27", status: "Not Started", assignee: "Busisoft", order: 6 }
+        { id: "step-1", title: "Clone ระบบ NAM ทั้งหมด", description: "สร้างสำเนาของระบบ NAM ปัจจุบัน (v4.5.3) ไปยังสภาพแวดล้อมทดสอบที่แยกออกมา เพื่อให้เราอัปเกรดและทดสอบได้อย่างปลอดภัย ไม่กระทบการทำงานปกติ", version: "v4.5.3", startDate: "2025-06-01", endDate: "2025-06-15", status: "In Progress", assignee: "THP", order: 1 },
+        { id: "step-2", title: "อัปเกรด NAM เป็น v4.5.5", description: "อัปเกรด NAM ในระบบแยกเป็น v4.5.5 เพื่อปรับปรุงส่วนประกอบพื้นฐานและแก้ไขปัญหาด้านความปลอดภัยบางประการ", details: ["อัปเดต Tomcat 8.5.72, OpenSSL 1.0.2za, Apache 2.4.51", "แก้ไขปัญหาความปลอดภัยเกี่ยวกับอักขระพิเศษและ SAML"], version: "v4.5.5", startDate: "2025-06-16", endDate: "2025-06-30", status: "Not Started", assignee: "Busisoft", order: 2 },
+        { id: "step-3", title: "อัปเกรด SUSE Linux เป็น 12 SP5", description: "การอัปเกรดระบบปฏิบัติการ SUSE Linux เป็น 12 SP5 เป็นสิ่งจำเป็นก่อนอัปเกรด NAM ไป v5.x เพื่อให้ระบบเข้ากันได้ดีและทำงานได้ราบรื่น", details: ["เป็นข้อกำหนดสำคัญ (Prerequisite) สำหรับ NAM v5.x", "ป้องกันปัญหาทางเทคนิคและความเข้ากันได้ของระบบ"], version: "SUSE Linux 12 SP5", startDate: "2025-07-01", endDate: "2025-07-15", status: "Not Started", assignee: "Busisoft", order: 3 },
+        { id: "step-4", title: "อัปเกรด NAM เป็น v5.0.3", description: "อัปเกรด NAM ในระบบแยกเป็น v5.0.3 ซึ่งมาพร้อมคุณสมบัติใหม่และการแก้ไขช่องโหว่ที่สำคัญ", details: ["รองรับ Kerberos Privileged Attribute Certificate (PAC)", "แก้ไขช่องโหว่ร้ายแรง Log4j และ Multiple XSS (CVE-2022-26325)", "อัปเดต Tomcat 9.0.65, Apache 2.4.54"], version: "v5.0.3", startDate: "2025-07-16", endDate: "2025-07-31", status: "Not Started", assignee: "Busisoft", order: 4 },
+        { id: "step-5", title: "อัปเกรด NAM เป็น v5.1", description: "อัปเกรดสู่เวอร์ชันเป้าหมาย v5.1 ที่มีการปรับปรุงครั้งใหญ่ด้านการจัดการและความปลอดภัย", details: ["หน้าจอจัดการใหม่ (Enhanced Administration Console) บน Angular UI", "ปรับปรุง REST APIs สำหรับการทำงานอัตโนมัติ", "แก้ไขช่องโหว่ Directory traversal, User impersonation และ Multiple XSS"], version: "v5.1", startDate: "2025-08-01", endDate: "2025-08-15", status: "Not Started", assignee: "Busisoft", order: 5 },
+        { id: "step-6", title: "ตรวจสอบและทดสอบระบบ", description: "ตรวจสอบและทดสอบระบบ NAM ที่อัปเกรดแล้วอย่างละเอียดในระบบแยก เพื่อให้แน่ใจว่าทุกอย่างทำงานถูกต้องและเสถียร ก่อนที่จะนำไปใช้งานจริง", version: "v5.1", startDate: "2025-08-16", endDate: "2025-08-30", status: "Not Started", assignee: "Busisoft", order: 6 }
     ];
 
     const improvementsChartData = {
@@ -362,7 +395,7 @@
         {
             title: 'ปัญหาความเข้ากันได้ของระบบ',
             description: 'ส่วนประกอบต่างๆ อาจมีปัญหาความเข้ากันไม่ได้ โดยเฉพาะการอัปเกรดระบบปฏิบัติการ',
-            mitigation: 'ปฏิบัติตามข้อกำหนดของผลิตภัณฑ์อย่างเคร่งครัด (เช่น อัปเกรด SUSE Linux ก่อน) และทดสอบการทำงานร่วมกันอย่างละเอียด'
+            mitigation: 'ปฏิบัติตามข้อกำหนดของผลิตภัณฑ์อย่างเคร่งครัด (เช่น อัปเกรด SUSE Linux ก่อน) และทดสอบการทำงานร่วมกันอย่างละเอียด)'
         },
         {
             title: 'ผลกระทบต่อผู้ใช้งาน',
@@ -387,7 +420,7 @@
             details: [
                 "รองรับ Multi-Factor Authentication (MFA) หลากหลายรูปแบบ",
                 "เพิ่ม Adaptive Authentication เพื่อปรับระดับความปลอดภัยตามบริบทการเข้าถึง",
-                "ปรับปรุงประสบการณ์การเข้าสู่ระบบที่ปลอดภัยและยืดหยุ่น"
+                "ปรับปรุงประสบการณ์การเข้าสู่ระบบที่ปลอดภัยและยืดหยู่น"
             ]
         },
         {
@@ -430,10 +463,50 @@
                 "ปรับปรุง REST APIs สำหรับการทำงานอัตโนมัติ (Automation) และการเชื่อมต่อ",
                 "แก้ไขช่องโหว่ Directory traversal, User impersonation, และ Multiple XSS เพิ่มเติม"
             ]
+        },
+        {
+            id: "suse-12-sp5",
+            name: "SUSE Linux Enterprise Server 12 SP5",
+            summary: "Service Pack ล่าสุดสำหรับ SUSE Linux 12 ที่มาพร้อมกับการอัปเดตด้านความปลอดภัยและประสิทธิภาพของระบบปฏิบัติการ",
+            details: [
+                "แพตช์ความปลอดภัยล่าสุดและการแก้ไขข้อผิดพลาดสำหรับระบบปฏิบัติการ",
+                "การปรับปรุงประสิทธิภาพเพื่อการตอบสนองของระบบที่ดีขึ้น",
+                "รองรับฮาร์ดแวร์และไดรเวอร์ที่อัปเดตแล้ว",
+                "เพิ่มความเสถียรและความน่าเชื่อถือสำหรับแอปพลิเคชันระดับองค์กรที่สำคัญ"
+            ]
         }
     ];
 
     // --- Function Declarations ---
+
+    /**
+     * Initializes the application by rendering all sections.
+     * This function now acts as the main entry point after DOMContentLoaded.
+     */
+    function initializeApplication() {
+        renderProgressTable();
+        renderProjectTimeline();
+        createImprovementsChart();
+        renderVersionSelection(); 
+        renderBenefits();
+        renderRisks();
+        renderRecommendations();
+
+        // Set initial selections for improvement details and version details
+        updateImprovementsDetails('ความปลอดภัย');
+        // Ensure version selection is rendered BEFORE attempting to activate a card
+        setTimeout(() => { // Small delay to ensure all cards are in DOM
+            const initialVersionCard = document.querySelector(`[data-version-id="v5.1"]`);
+            if (initialVersionCard) {
+                displayVersionDetails('v5.1', initialVersionCard);
+            } else {
+                const aaVersionCard = document.querySelector(`[data-version-id="aa"]`);
+                if (aaVersionCard) {
+                    displayVersionDetails('aa', aaVersionCard);
+                }
+            }
+        }, 100); // Adjust delay if needed
+    }
 
     /**
      * Updates the task data locally and re-renders the UI elements.
@@ -445,11 +518,9 @@
         const taskIndex = window.upgradeSteps.findIndex(task => task.id === taskId);
         if (taskIndex > -1) {
             window.upgradeSteps[taskIndex][field] = value;
-            // For demo purposes, add fake last updated info
             window.upgradeSteps[taskIndex].lastUpdatedBy = "Local User";
             window.upgradeSteps[taskIndex].lastUpdated = new Date().toISOString();
         }
-        // Sort steps by order to ensure AA is always first
         window.upgradeSteps.sort((a, b) => a.order - b.order);
         renderProgressTable();
         renderProjectTimeline();
@@ -464,8 +535,12 @@
         
         tableBody.innerHTML = ''; // Clear existing rows
 
-        // Sort steps by order before rendering
         const sortedSteps = [...window.upgradeSteps].sort((a, b) => a.order - b.order);
+
+        if (sortedSteps.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-gray-500">ไม่มีข้อมูลแผนการอัปเกรด</td></tr>';
+            return;
+        }
 
         sortedSteps.forEach((step, index) => {
             const row = document.createElement('tr');
@@ -506,8 +581,8 @@
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm ${statusColorClass}">
                     <select class="border rounded px-2 py-1 text-sm ${statusColorClass}"
-                            onchange="window.updateTaskDataAndRenderUI('${step.id}', 'status', this.value)"
-                            ${step.id === 'step-aa' ? 'disabled' : ''}>
+                             onchange="window.updateTaskDataAndRenderUI('${step.id}', 'status', this.value)"
+                             ${step.id === 'step-aa' ? 'disabled' : ''}>
                         <option value="Not Started" ${step.status === 'Not Started' ? 'selected' : ''}>Not Started</option>
                         <option value="In Progress" ${step.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
                         <option value="Completed" ${step.status === 'Completed' ? 'selected' : ''}>Completed</option>
@@ -525,92 +600,134 @@
 
     /**
      * Renders the project timeline based on the current upgradeSteps data.
+     * This version completely re-generates the timeline using a simpler absolute positioning approach.
      */
     function renderProjectTimeline() {
-        const timelineTracks = document.getElementById('timeline-tracks');
-        const timelineAxis = document.getElementById('timeline-axis');
-        if (!timelineTracks || !timelineAxis) return;
+        const timelineWrapper = document.getElementById('project-timeline');
+        const timelineOuterContainer = timelineWrapper.querySelector('.project-timeline'); // Corrected selector to outer container
+        const timelineAxisContainer = timelineWrapper.querySelector('.timeline-axis'); 
+        const timelineTracksContainer = timelineWrapper.querySelector('#timeline-tracks');
 
-        timelineTracks.innerHTML = '';
-        timelineAxis.innerHTML = '';
+        if (!timelineOuterContainer || !timelineAxisContainer || !timelineTracksContainer) {
+            console.error("Timeline containers not found.");
+            return;
+        }
 
-        if (window.upgradeSteps.length === 0) return;
+        timelineAxisContainer.innerHTML = ''; // Clear previous axis
+        timelineTracksContainer.innerHTML = ''; // Clear previous tracks
 
-        // Sort steps by order to ensure AA is always first
+        if (window.upgradeSteps.length === 0) {
+            timelineTracksContainer.innerHTML = '<div class="text-center py-4 text-gray-500">ไม่มีข้อมูล Timeline ที่พร้อมใช้งาน</div>';
+            return;
+        }
+
         const sortedSteps = [...window.upgradeSteps].sort((a, b) => a.order - b.order);
 
-        // Determine overall project start date (April 1st, 2025)
-        let projectStartDate = new Date(2025, 3, 1); // April 1st, 2025 (Month is 0-indexed)
+        // Determine overall project start and end dates from task data
+        const validDates = sortedSteps.filter(s => s.startDate && s.endDate)
+                                      .flatMap(s => [new Date(s.startDate).getTime(), new Date(s.endDate).getTime()]);
+        
+        let projectStartDate;
+        let projectEndDate;
 
-        // Calculate project end date based on the latest task, ensuring it extends to at least August 2025
-        let latestTaskEndDate = new Date(Math.max(...sortedSteps.map(s => new Date(s.endDate))));
-        let minProjectEndDate = new Date(2025, 7, 31); // August 31st, 2025
-        let projectEndDate = new Date(Math.max(latestTaskEndDate.getTime(), minProjectEndDate.getTime()));
+        if (validDates.length > 0) {
+            projectStartDate = new Date(Math.min(...validDates));
+            projectEndDate = new Date(Math.max(...validDates));
+        } else {
+            // Fallback to a fixed default range if no valid dates are found
+            projectStartDate = new Date(2025, 3, 1); // April 1st, 2025 (Month is 0-indexed)
+            projectEndDate = new Date(2025, 8, 30); // September 30th, 2025
+        }
 
-        // Add some buffer to the final projectEndDate for better visualization at the end
-        projectEndDate.setDate(projectEndDate.getDate() + 14);
+        // Add a buffer to the end date for better visualization (e.g., 1 month)
+        projectEndDate.setMonth(projectEndDate.getMonth() + 1);
 
         const totalProjectDurationMs = projectEndDate.getTime() - projectStartDate.getTime();
-        const timelineChartAreaWidthPx = 800; // Reverted to smaller width for main chart area
+        const pixelsPerMs = 0.00000035; // Adjusted value: More pixels per millisecond to stretch the timeline.
 
-        // Render Axis (monthly labels)
+        // Calculate chart area width based on overall duration
+        const minChartAreaWidth = 900; // Minimum pixel width for the chart portion (where bars go)
+        const calculatedChartWidthPx = totalProjectDurationMs * pixelsPerMs;
+        const finalChartWidthPx = Math.max(minChartAreaWidth, calculatedChartWidthPx); 
+        
+        const labelAreaWidth = 250; // Fixed width for the label area (task titles)
+
+        // Set the width of the main project-timeline container to control the full scrollable width
+        timelineOuterContainer.style.width = `${labelAreaWidth + finalChartWidthPx}px`; // Overall width including labels
+
+
+        // --- Render Axis (monthly labels) ---
         let currentMonth = new Date(projectStartDate.getFullYear(), projectStartDate.getMonth(), 1);
         const monthFormat = { month: 'short', year: 'numeric' };
         let axisContent = '';
+
         while (currentMonth.getTime() <= projectEndDate.getTime()) {
             const nextMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
-            const monthDurationMs = nextMonth.getTime() - currentMonth.getTime();
+            const segmentStartMs = Math.max(currentMonth.getTime(), projectStartDate.getTime());
+            const segmentEndMs = Math.min(nextMonth.getTime(), projectEndDate.getTime());
             
-            // Calculate width for each month dynamically
-            const monthWidth = Math.max(0, timelineChartAreaWidthPx * (monthDurationMs / totalProjectDurationMs));
-            
-            axisContent += `<div style="width: ${monthWidth}px; text-align: center; flex-shrink: 0;">${currentMonth.toLocaleString('th-TH', monthFormat)}</div>`;
+            const monthDurationMs = segmentEndMs - segmentStartMs;
+            const monthWidthPx = monthDurationMs * pixelsPerMs;
+
+            if (monthWidthPx > 0) {
+                axisContent += `<div class="timeline-axis-month" style="width: ${monthWidthPx}px;">${currentMonth.toLocaleString('th-TH', monthFormat)}</div>`;
+            }
             currentMonth = nextMonth;
         }
-        timelineAxis.innerHTML = axisContent;
-        timelineAxis.style.width = `${timelineChartAreaWidthPx}px`;
+        timelineAxisContainer.innerHTML = axisContent;
+        // The axis itself is positioned within the .project-timeline, so its left offset needs to account for the label area
+        timelineAxisContainer.style.width = `${finalChartWidthPx}px`; // Axis content width
+        timelineAxisContainer.style.marginLeft = `${labelAreaWidth}px`; // Offset axis by label area width
 
 
-        // Render Task Bars
+        // --- Render Task Bars ---
         sortedSteps.forEach((step, index) => {
             const track = document.createElement('div');
             track.classList.add('timeline-track');
-            
-            // Task title as a label to the left of the bar area
+            track.style.width = `100%`; // Track takes 100% width of timelineOuterContainer
+
+            // Task title label area (positioned absolutely relative to the track)
             const taskLabel = document.createElement('div');
-            taskLabel.classList.add('timeline-label-area'); // Applies specific styling for labels
+            taskLabel.classList.add('timeline-label-area');
             taskLabel.textContent = step.title;
             track.appendChild(taskLabel);
 
-            // Container for the bar, takes remaining flexible width
+            // Chart area for the bar (positioned absolutely within the track, offset by labelAreaWidth)
             const chartArea = document.createElement('div');
             chartArea.classList.add('timeline-chart-area');
+            chartArea.style.marginLeft = `${labelAreaWidth}px`; // Offset chart area by label width
+            chartArea.style.width = `${finalChartWidthPx}px`; // Explicitly set width
+            track.appendChild(chartArea);
+
 
             const bar = document.createElement('div');
             const stepStartDate = new Date(step.startDate);
             const stepEndDate = new Date(step.endDate);
 
-            // Calculate position and width relative to the overall project duration
+            if (isNaN(stepStartDate.getTime()) || isNaN(stepEndDate.getTime())) {
+                console.warn(`Skipping timeline bar for task ${step.id} due to invalid dates.`);
+                timelineTracksContainer.appendChild(track);
+                return;
+            }
+
+            // Calculate position and width based on milliseconds and pixelsPerMs
             const offsetMs = stepStartDate.getTime() - projectStartDate.getTime();
             const durationMs = stepEndDate.getTime() - stepStartDate.getTime();
 
-            // Calculate position and width of the bar within the timelineChartAreaWidthPx
-            const leftPositionPx = (offsetMs / totalProjectDurationMs) * timelineChartAreaWidthPx;
-            const widthPx = (durationMs / totalProjectDurationMs) * timelineChartAreaWidthPx;
+            const leftPositionPx = offsetMs * pixelsPerMs;
+            const widthPx = durationMs * pixelsPerMs;
+
+            const finalBarWidthPx = Math.max(widthPx, 5); // Ensure a minimum width
 
             bar.classList.add('timeline-bar', `status-${step.status.replace(/\s/g, '')}`);
             bar.style.left = `${leftPositionPx}px`;
-            bar.style.width = `${Math.max(widthPx, 20)}px`; // Ensure min width for visibility
+            bar.style.width = `${finalBarWidthPx}px`;
             
             bar.title = `${step.title}\nสถานะ: ${step.status}\nเริ่ม: ${step.startDate}\nสิ้นสุด: ${step.endDate}`; // Tooltip
 
-            chartArea.appendChild(bar); // Add the bar to its chart area container
-            track.appendChild(chartArea); // Add the chart area container to the track
-            timelineTracks.appendChild(track); // Add the track to the container
+            chartArea.appendChild(bar);
+            timelineTracksContainer.appendChild(track);
         });
-        // Adjust overall timelineTracks width for horizontal scrolling if needed (total width of labels + chart area)
-        timelineTracks.style.width = `calc(250px + ${timelineChartAreaWidthPx}px)`; // 250px for label area + chart area width
-
     }
     window.renderProjectTimeline = renderProjectTimeline; // Expose to window
 
@@ -713,14 +830,19 @@
     function renderVersionSelection() {
         const selectionArea = document.getElementById('version-selection-area');
         if (!selectionArea) return;
-        selectionArea.innerHTML = versionDetailsData.map(version => `
-            <div class="bg-white p-4 rounded-lg shadow-md border border-gray-200 version-card" 
-                 data-version-id="${version.id}"
-                 onclick="window.displayVersionDetails('${version.id}', this)">
+        selectionArea.innerHTML = ''; // Clear existing cards
+        versionDetailsData.forEach(version => {
+            const cardDiv = document.createElement('div');
+            cardDiv.classList.add('bg-white', 'p-4', 'rounded-lg', 'shadow-md', 'border', 'border-gray-200', 'version-card');
+            cardDiv.setAttribute('data-version-id', version.id);
+            cardDiv.onclick = () => window.displayVersionDetails(version.id, cardDiv);
+
+            cardDiv.innerHTML = `
                 <h3 class="text-lg font-semibold text-gray-800 mb-1">${version.name}</h3>
                 <p class="text-sm text-gray-600">${version.summary}</p>
-            </div>
-        `).join('');
+            `;
+            selectionArea.appendChild(cardDiv);
+        });
     }
     window.renderVersionSelection = renderVersionSelection; // Expose to window
 
@@ -740,6 +862,12 @@
         // Add active class to the clicked card
         if (clickedElement) {
             clickedElement.classList.add('active');
+        } else {
+            // If no clickedElement is provided (e.g., on initial load), find it
+            const cardToActivate = document.querySelector(`[data-version-id="${versionId}"]`);
+            if (cardToActivate) {
+                cardToActivate.classList.add('active');
+            }
         }
 
         const selectedVersion = versionDetailsData.find(v => v.id === versionId);
@@ -813,14 +941,7 @@
 
     // --- Event Listeners (after DOMContentLoaded) ---
     document.addEventListener('DOMContentLoaded', () => {
-        // Initial rendering of all sections
-        renderProgressTable();
-        renderProjectTimeline();
-        createImprovementsChart();
-        renderVersionSelection(); // Render version selection cards
-        renderBenefits();
-        renderRisks();
-        renderRecommendations();
+        initializeApplication(); // Call the main initialization function
 
         // --- Navigation active state logic ---
         const sections = document.querySelectorAll('section[id]');
