@@ -10,13 +10,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Chosen Palette: Busisoft Blue Theme - Primary: #0D94E8, Medium: #2196F3, Light: #E3F2FD -->
-    <!-- Application Structure Plan: Reverted to the structure of V3, featuring an overview, interactive progress table with Firestore integration, and a visual timeline. Includes a simple doughnut chart for improvements categories. This version brings back the original UI layout requested before further complex additions, while ensuring core data loading and saving functionalities are fixed. -->
+    <!-- Application Structure Plan: Reverted to the structure of V3, now with all data directly embedded in the HTML/JavaScript. No Firebase integration for persistence. Features overview, interactive progress table (local updates only), visual timeline, and a simple doughnut chart for improvements categories. This version prioritizes offline usability and direct embedability. -->
     <!-- Visualization & Content Choices: 
-        1. Upgrade Path & Progress Table: Sequential upgrade steps with dates/status. Goal -> Track real-time progress. Viz/Method -> Dynamic HTML Table with input fields (date, select). Interaction -> Users can update dates/status which saves to Firestore. Justification -> Allows for collaborative, real-time tracking. Library -> Vanilla JS + Tailwind CSS + Firestore.
-        2. Project Timeline (Visual Gantt-like): Task durations and sequence. Goal -> Provide visual overview of project plan and timeline. Viz/Method -> Custom HTML/CSS/JS timeline with dynamic bar widths and positions. Interaction -> Visually represents progress, updates based on table changes. Justification -> Fulfills user request for a "project plan with timeline". Library -> Vanilla JS + Tailwind CSS.
+        1. Upgrade Path & Progress Table: Sequential upgrade steps with dates/status. Goal -> Track real-time progress. Viz/Method -> Dynamic HTML Table with input fields (date, select). Interaction -> Users can update dates/status which are saved locally (not persistent). Justification -> Provides interactive tracking without external dependencies. Library -> Vanilla JS + Tailwind CSS.
+        2. Project Timeline (Visual Gantt-like): Task durations and sequence. Goal -> Provide visual overview of project plan and timeline. Viz/Method -> Custom HTML/CSS/JS timeline with dynamic bar widths and positions. Interaction -> Visually represents progress, updates based on local table changes. Justification -> Fulfills user request for a "project plan with timeline". Library -> Vanilla JS + Tailwind CSS.
         3. Version Improvements: Features/fixes in each patch. Goal -> Summarize and compare improvements. Viz/Method -> Doughnut Chart (Chart.js) for categories (Security, Performance, Features). Interaction -> Clicking a chart segment filters a detailed list below. Justification -> Provides a quick visual summary of gains and allows users to drill down into areas of interest. Library -> Chart.js.
         4. Benefits/Risks/Recommendations: Textual lists of pros and cons. Goal -> Inform clearly. Viz/Method -> Card-based grid layout for benefits, two-column layout for risks/recommendations. Interaction -> Minimal, focus on readability. Justification -> Organizes qualitative information for easy scanning and comprehension. Library -> Tailwind CSS.
-        All textual content and initial task data are loaded from JS objects, with data being persisted in Firestore. -->
+        All textual content and task data are hardcoded directly into JavaScript arrays/objects. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body {
@@ -168,13 +168,20 @@
         <section id="progress" class="mb-20 pt-16 -mt-16">
             <h2 class="text-3xl font-bold text-center mb-12">การติดตามความคืบหน้าแผนการอัปเกรด</h2>
             <p class="text-center max-w-2xl mx-auto mb-8 text-gray-600">
-                คุณสามารถอัปเดตสถานะและวันที่ของแต่ละขั้นตอนได้ เพื่อติดตามความคืบหน้าแบบเรียลไทม์
+                คุณสามารถอัปเดตสถานะและวันที่ของแต่ละขั้นตอนได้ และสามารถบันทึก/โหลดข้อมูลแผนงานเป็นไฟล์ได้
             </p>
-            <div id="loading-message" class="text-center text-gray-500 mb-4 flex justify-center items-center gap-2">
-                <div class="spinner"></div> กำลังโหลดข้อมูล...
-            </div>
-            <div id="user-id-display" class="text-sm text-right text-gray-500 mb-4"></div>
             
+            <!-- New buttons for Save/Load Data -->
+            <div class="flex flex-wrap justify-center gap-4 mb-8">
+                <button id="downloadDataButton" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors">
+                    ดาวน์โหลดข้อมูลแผนงาน (.json)
+                </button>
+                <label for="uploadDataInput" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors cursor-pointer">
+                    อัปโหลดข้อมูลแผนงาน (.json)
+                </label>
+                <input type="file" id="uploadDataInput" accept=".json" class="hidden" />
+            </div>
+
             <div class="overflow-x-auto bg-white rounded-xl shadow-lg border border-gray-100 p-6">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-light-blue">
@@ -206,7 +213,7 @@
             </div>
 
             <p class="text-center max-w-2xl mx-auto mt-8 text-gray-600">
-                *ระบบนี้ช่วยให้ผู้ที่เข้าถึงสามารถอัปเดตความคืบหน้าของงานได้ เพื่อให้ทุกคนเห็นสถานะล่าสุดของโครงการ.
+                *ข้อมูลความคืบหน้าจะถูกอัปเดตบนหน้าเว็บแบบเรียลไทม์ แต่จะไม่ถูกบันทึกถาวรเมื่อปิดหน้าเว็บ หากต้องการบันทึก/โหลด ให้ใช้ปุ่มด้านบน.
             </p>
         </section>
         
@@ -269,24 +276,9 @@
     </footer>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    // Global Firebase instances
-    let firebaseApp = null;
-    let db = null;
-    let auth = null;
-    let userId = null;
-    let isAuthReady = false;
-
-    // Global state variables for data
-    let upgradeSteps = []; // Will be populated by Firestore
-    let improvementsChartInstance = null; // To hold the Chart.js instance for improvements data
-
-
-    // --- Static Data Definitions ---
-    const initialUpgradeSteps = [
+    // --- Static Data Definitions (All data is now hardcoded) ---
+    // Make upgradeSteps a global variable or accessible via window for updateTaskDataAndRenderUI and file operations
+    window.upgradeSteps = [ // This array will be updated locally, but not persistently saved
         { id: "step-1", title: "Clone ระบบ NAM ทั้งหมด", description: "สร้างสำเนาของระบบ NAM ปัจจุบัน (v4.5.3) ไปยังสภาพแวดล้อมทดสอบที่แยกออกมา เพื่อให้เราอัปเกรดและทดสอบได้อย่างปลอดภัย ไม่กระทบการทำงานปกติ", version: "v4.5.3", startDate: "2025-06-01", endDate: "2025-06-10", status: "In Progress", assignee: "THP", order: 1 },
         { id: "step-2", title: "อัปเกรด NAM เป็น v4.5.5", description: "อัปเกรด NAM ในระบบแยกเป็น v4.5.5 เพื่อปรับปรุงส่วนประกอบพื้นฐานและแก้ไขปัญหาด้านความปลอดภัยบางประการ", details: ["อัปเดต Tomcat 8.5.72, OpenSSL 1.0.2za, Apache 2.4.51", "แก้ไขปัญหาความปลอดภัยเกี่ยวกับอักขระพิเศษและ SAML"], version: "v4.5.5", startDate: "2025-06-11", endDate: "2025-06-20", status: "Not Started", assignee: "THP", order: 2 },
         { id: "step-3", title: "อัปเกรด SUSE Linux เป็น 12 SP5", description: "การอัปเกรดระบบปฏิบัติการ SUSE Linux เป็น 12 SP5 เป็นสิ่งจำเป็นก่อนอัปเกรด NAM ไป v5.x เพื่อให้ระบบเข้ากันได้ดีและทำงานได้ราบรื่น", details: ["เป็นข้อกำหนดสำคัญ (Prerequisite) สำหรับ NAM v5.x", "ป้องกันปัญหาทางเทคนิคและความเข้ากันได้ของระบบ"], version: "SUSE Linux 12 SP5", startDate: "2025-06-21", endDate: "2025-06-30", status: "Not Started", assignee: "THP", order: 3 },
@@ -333,7 +325,7 @@
             description: 'การเพิ่ม AA ช่วยให้รองรับการทำงานนอกสถานที่ (Mobile Workforce) และการ Login แบบ Offline ได้อย่างปลอดภัย'
         },
         {
-            icon: '🚀',
+            icon: '�',
             title: 'พร้อมสำหรับอนาคต',
             description: 'ระบบที่ทันสมัยพร้อมรองรับเทคโนโลยีใหม่ๆ และการเปลี่ยนแปลงทางธุรกิจในอนาคตได้อย่างมั่นใจ'
         }
@@ -366,68 +358,34 @@
 
     // --- Function Declarations ---
 
-    async function initializeFirestoreListeners() {
-        if (!isAuthReady || !db) {
-            console.log("Firestore not ready, retrying initialization...");
-            setTimeout(initializeFirestoreListeners, 100);
-            return;
+    /**
+     * Updates the task data locally and re-renders the UI elements.
+     * @param {string} taskId - The ID of the task to update.
+     * @param {string} field - The field of the task to update (e.g., 'startDate', 'status').
+     * @param {*} value - The new value for the specified field.
+     */
+    window.updateTaskDataAndRenderUI = (taskId, field, value) => {
+        const taskIndex = window.upgradeSteps.findIndex(task => task.id === taskId);
+        if (taskIndex > -1) {
+            window.upgradeSteps[taskIndex][field] = value;
+            // For demo purposes, add fake last updated info
+            window.upgradeSteps[taskIndex].lastUpdatedBy = "Local User";
+            window.upgradeSteps[taskIndex].lastUpdated = new Date().toISOString();
         }
-
-        console.log("Firestore ready. Initializing data and listeners...");
-        const loadingMessage = document.getElementById('loading-message');
-        loadingMessage.textContent = 'กำลังโหลดข้อมูล...';
-
-        // Corrected collection path to have an odd number of segments, following rules: artifacts/{appId}/public/data/{your_collection_name}
-        const tasksCollectionRef = collection(db, `artifacts/${window.__app_id}/public/data/upgradeTasks`);
-
-        // Initial data check and population
-        const initialDocs = await getDocs(tasksCollectionRef);
-        if (initialDocs.empty) {
-            console.log("No tasks in Firestore, populating initial data...");
-            for (const task of initialUpgradeSteps) {
-                await setDoc(doc(tasksCollectionRef, task.id), task);
-            }
-            console.log("Initial tasks populated.");
-        }
-
-        // Set up real-time listener for tasks
-        onSnapshot(query(tasksCollectionRef, orderBy("order")), (snapshot) => {
-            upgradeSteps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            console.log("Tasks fetched from Firestore:", upgradeSteps);
-            renderProgressTable(); // Re-render the progress table
-            renderProjectTimeline(); // Render the timeline as well
-            createImprovementsChart(); // Render/Update improvements chart
-            loadingMessage.style.display = 'none'; // Hide loading message once data is loaded
-        }, (error) => {
-            console.error("Error fetching tasks from Firestore:", error);
-            loadingMessage.textContent = 'เกิดข้อผิดพลาดในการโหลดข้อมูล.';
-        });
-    }
-
-    // Expose updateTaskInFirestore to window for HTML event handlers
-    window.updateTaskInFirestore = async (taskId, field, value) => {
-        if (!db || !isAuthReady) {
-            console.error("Firestore not initialized or auth not ready.");
-            return;
-        }
-        const taskRef = doc(db, `artifacts/${window.__app_id}/public/data/upgradeTasks`, taskId);
-        try {
-            await setDoc(taskRef, { [field]: value, lastUpdatedBy: userId, lastUpdated: new Date().toISOString() }, { merge: true });
-            console.log(`Task ${taskId} updated: ${field} = ${value}`);
-            // UI will be updated automatically by onSnapshot listener
-        } catch (error) {
-            console.error("Error updating task in Firestore:", error);
-            alert('Failed to update task. Please check console for details.'); 
-        }
+        renderProgressTable();
+        renderProjectTimeline();
     };
 
+    /**
+     * Renders the progress table based on the current upgradeSteps data.
+     */
     function renderProgressTable() {
         const tableBody = document.getElementById('progress-table-body');
         if (!tableBody) return;
         
         tableBody.innerHTML = ''; // Clear existing rows
 
-        upgradeSteps.forEach((step, index) => {
+        window.upgradeSteps.forEach((step, index) => {
             const row = document.createElement('tr');
             row.classList.add('hover:bg-gray-50');
 
@@ -455,16 +413,16 @@
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <input type="date" value="${step.startDate || ''}" 
                            class="border rounded px-2 py-1 text-sm w-36"
-                           onchange="window.updateTaskInFirestore('${step.id}', 'startDate', this.value)">
+                           onchange="window.updateTaskDataAndRenderUI('${step.id}', 'startDate', this.value)">
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <input type="date" value="${step.endDate || ''}" 
                            class="border rounded px-2 py-1 text-sm w-36"
-                           onchange="window.updateTaskInFirestore('${step.id}', 'endDate', this.value)">
+                           onchange="window.updateTaskDataAndRenderUI('${step.id}', 'endDate', this.value)">
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm ${statusColorClass}">
                     <select class="border rounded px-2 py-1 text-sm ${statusColorClass}"
-                            onchange="window.updateTaskInFirestore('${step.id}', 'status', this.value)">
+                            onchange="window.updateTaskDataAndRenderUI('${step.id}', 'status', this.value)">
                         <option value="Not Started" ${step.status === 'Not Started' ? 'selected' : ''}>Not Started</option>
                         <option value="In Progress" ${step.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
                         <option value="Completed" ${step.status === 'Completed' ? 'selected' : ''}>Completed</option>
@@ -480,6 +438,9 @@
     }
     window.renderProgressTable = renderProgressTable; // Expose to window
 
+    /**
+     * Renders the project timeline based on the current upgradeSteps data.
+     */
     function renderProjectTimeline() {
         const timelineTracks = document.getElementById('timeline-tracks');
         const timelineAxis = document.getElementById('timeline-axis');
@@ -488,13 +449,13 @@
         timelineTracks.innerHTML = '';
         timelineAxis.innerHTML = '';
 
-        if (upgradeSteps.length === 0) return;
+        if (window.upgradeSteps.length === 0) return;
 
         // Calculate project start and end dates
-        let projectStartDate = new Date(Math.min(...upgradeSteps.map(s => new Date(s.startDate))));
-        let projectEndDate = new Date(Math.max(...upgradeSteps.map(s => new Date(s.endDate))));
+        let projectStartDate = new Date(Math.min(...window.upgradeSteps.map(s => new Date(s.startDate))));
+        let projectEndDate = new Date(Math.max(...window.upgradeSteps.map(s => new Date(s.endDate))));
 
-        // Add some buffer to the timeline start/end
+        // Add some buffer to the timeline start/end for better visualization
         projectStartDate.setDate(projectStartDate.getDate() - 7); // 7 days before first task
         projectEndDate.setDate(projectEndDate.getDate() + 14); // 14 days after last task
 
@@ -516,7 +477,7 @@
 
 
         // Render Task Bars
-        upgradeSteps.forEach((step, index) => {
+        window.upgradeSteps.forEach((step, index) => {
             const track = document.createElement('div');
             track.classList.add('timeline-track');
             
@@ -550,16 +511,19 @@
     }
     window.renderProjectTimeline = renderProjectTimeline; // Expose to window
 
-
+    /**
+     * Creates the Doughnut chart for improvements using Chart.js.
+     */
     function createImprovementsChart() {
         const ctx = document.getElementById('improvementsChart');
         if (!ctx) return;
 
-        if (improvementsChartInstance) {
-            improvementsChartInstance.destroy(); // Destroy previous instance if it exists
+        // Destroy existing chart instance if it exists to prevent re-initialization issues
+        if (window.improvementsChartInstance) {
+            window.improvementsChartInstance.destroy();
         }
 
-        improvementsChartInstance = new Chart(ctx, { // Assign to the global instance variable
+        const chart = new Chart(ctx, {
             type: 'doughnut',
             data: improvementsChartData,
             options: {
@@ -591,149 +555,230 @@
                 }
             }
         });
+        window.improvementsChartInstance = chart; // Store instance globally
     }
     window.createImprovementsChart = createImprovementsChart; // Expose to window
 
+    /**
+     * Updates the details section based on the selected improvement category.
+     * @param {string} category - The selected improvement category (e.g., 'ความปลอดภัย').
+     */
     function updateImprovementsDetails(category) {
         const container = document.getElementById('improvements-details');
         if (!container) return;
 
         let content = `
             <h3 class="font-bold text-xl mb-4 text-primary-blue">${category}</h3>
-            <ul class="list-disc list-inside space-y-2 text-gray-700">
-                ${(category === 'ความปลอดภัย' ? [
-                    'แก้ไขช่องโหว่ร้ายแรง: Log4j, Multiple XSS, Directory Traversal, User Impersonation',
-                    'เพิ่มการรองรับ Kerberos PAC เพื่อการยืนยันตัวตนที่ปลอดภัยขึ้น',
-                    'แนะนำ `SecureCredentialsAuthClass` สำหรับเข้ารหัสรหัสผ่านฝั่ง Client',
-                    'เพิ่มการยืนยันตัวตนหลายปัจจัย (MFA) และ Adaptive Authentication ผ่าน AA'
-                ] : category === 'ประสิทธิภาพ' ? [
-                    'อัปเดตส่วนประกอบหลัก: Tomcat, Apache, OpenSSL, JRE',
-                    'ปรับปรุง Administration Console ใหม่ทั้งหมดด้วย Angular UI ทำงานเร็วขึ้น',
-                    'ปรับปรุงการทำงานของ Single Sign-On (SSO)',
-                    'ลดภาระงานจัดการด้วย REST APIs ที่ดีขึ้น'
-                ] : category === 'คุณสมบัติใหม่' ? [
-                    'หน้าจอจัดการใหม่ (Angular UI) ที่ทันสมัยและใช้งานง่าย',
-                    'Enhanced REST APIs พร้อมเอกสาร Swagger สำหรับนักพัฒนา',
-                    'ความสามารถในการตรวจสอบการเปลี่ยนแปลงการตั้งค่า (Auditing)',
-                    'บูรณาการกับ NetIQ Advanced Authentication (AA) ได้อย่างสมบูรณ์'
-                ] : []).map(d => `<li>${d}</li>`).join('')}
-            </ul>
+            <ul class="list-disc list-inside text-gray-700 space-y-2">
         `;
+        
+        switch (category) {
+            case 'ความปลอดภัย':
+                content += `
+                    <li>แก้ไขช่องโหว่ความปลอดภัยที่พบในเวอร์ชันก่อนหน้า (เช่น Log4j, XSS)</li>
+                    <li>รองรับการยืนยันตัวตนแบบ Multi-Factor Authentication (MFA) ด้วย NetIQ AA</li>
+                    <li>เพิ่มความสามารถในการตรวจสอบและควบคุมการเข้าถึงที่ละเอียดอ่อนยิ่งขึ้น</li>
+                    <li>อัปเดตส่วนประกอบพื้นฐาน (Tomcat, OpenSSL, Apache) ให้เป็นเวอร์ชันที่ปลอดภัย</li>
+                `;
+                break;
+            case 'ประสิทธิภาพ':
+                content += `
+                    <li>ปรับปรุงความเร็วในการประมวลผลและการตอบสนองของระบบ</li>
+                    <li>ลดภาระงานของ Server ด้วยการจัดการทรัพยากรที่ดีขึ้น</li>
+                    <li>เพิ่มความเสถียรและความน่าเชื่อถือในการทำงานต่อเนื่อง</li>
+                `;
+                break;
+            case 'คุณสมบัติใหม่':
+                content += `
+                    <li>หน้าจอจัดการผู้ดูแลระบบ (Administration Console) ที่ทันสมัยขึ้นบน Angular UI</li>
+                    <li>ปรับปรุงและเพิ่มประสิทธิภาพ REST APIs สำหรับการทำงานแบบ Automation</li>
+                    <li>รองรับ Kerberos Privileged Attribute Certificate (PAC)</li>
+                    <li>บูรณาการกับ NetIQ Advanced Authentication (AA) ได้อย่างสมบูรณ์แบบ</li>
+                `;
+                break;
+            default:
+                content += `<li>ไม่พบรายละเอียดสำหรับหมวดหมู่นี้</li>`;
+        }
+        content += `</ul>`;
         container.innerHTML = content;
     }
     window.updateImprovementsDetails = updateImprovementsDetails; // Expose to window
-    
-    function createBenefits() {
+
+    /**
+     * Renders the benefits section.
+     */
+    function renderBenefits() {
         const container = document.getElementById('benefits-container');
-        if(!container) return;
-        
-        container.innerHTML = benefitsData.map(benefit => `
-            <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all">
-                <div class="text-4xl mb-4">${benefit.icon}</div>
-                <h3 class="font-bold text-lg mb-2">${benefit.title}</h3>
-                <p class="text-gray-600 text-sm">${benefit.description}</p>
-            </div>
-        `).join('');
-    }
-    window.createBenefits = createBenefits; // Expose to window
-
-    function createRisks() {
-        const container = document.getElementById('risks-container');
-        if(!container) return;
-
-        container.innerHTML = risksData.map(risk => `
-            <div>
-                <h4 class="font-bold text-lg">${risk.title}</h4>
-                <p class="text-gray-600 mt-1">${risk.description}</p>
-                <div class="mt-2 bg-blue-50 border border-blue-200 text-blue-800 p-3 rounded-lg flex items-start">
-                    <span class="font-bold mr-2 text-sm">การป้องกัน:</span>
-                    <p>${risk.mitigation}</p>
+        if (!container) return;
+        container.innerHTML = benefitsData.map(item => `
+            <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 flex items-start space-x-4">
+                <div class="text-4xl leading-none">${item.icon}</div>
+                <div>
+                    <h3 class="text-xl font-semibold mb-2 text-gray-800">${item.title}</h3>
+                    <p class="text-gray-600">${item.description}</p>
                 </div>
             </div>
         `).join('');
     }
-    window.createRisks = createRisks; // Expose to window
+    window.renderBenefits = renderBenefits; // Expose to window
 
-    function createRecommendations() {
-        const container = document.getElementById('recommendations-container');
-        if(!container) return;
-
-        container.innerHTML = `
-            <ul class="list-decimal list-inside space-y-3 text-gray-700">
-                ${recommendationsData.map(rec => `<li>${rec}</li>`).join('')}
-            </ul>
-        `;
+    /**
+     * Renders the risks section.
+     */
+    function renderRisks() {
+        const container = document.getElementById('risks-container');
+        if (!container) return;
+        container.innerHTML = risksData.map(item => `
+            <div class="p-6 rounded-lg bg-red-50 border border-red-200">
+                <h3 class="text-xl font-semibold text-red-700 mb-3">${item.title}</h3>
+                <p class="text-gray-700 mb-2"><strong>ผลกระทบ:</strong> ${item.description}</p>
+                <p class="text-gray-700"><strong>การลดผลกระทบ:</strong> ${item.mitigation}</p>
+            </div>
+        `).join('');
     }
-    window.createRecommendations = createRecommendations; // Expose to window
+    window.renderRisks = renderRisks; // Expose to window
 
-    function handleScrollSpy() {
+    /**
+     * Renders the recommendations section.
+     */
+    function renderRecommendations() {
+        const container = document.getElementById('recommendations-container');
+        if (!container) return;
+        container.innerHTML = recommendationsData.map(rec => `
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 flex items-start space-x-3">
+                <span class="text-blue-600 text-lg">💡</span>
+                <p class="text-gray-700">${rec}</p>
+            </div>
+        `).join('');
+    }
+    window.renderRecommendations = renderRecommendations; // Expose to window
+
+    /**
+     * Handles downloading the current upgradeSteps data as a JSON file.
+     */
+    function handleDownloadData() {
+        const dataStr = JSON.stringify(window.upgradeSteps, null, 2); // Pretty print JSON
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'netiq_upgrade_plan_data.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        // Using alert() as per current project standards. In a real app, a custom modal would be preferred.
+        alert('ดาวน์โหลดข้อมูลแผนงานสำเร็จแล้ว!'); 
+    }
+    window.handleDownloadData = handleDownloadData; // Expose to window
+
+    /**
+     * Handles uploading a JSON file and updating the upgradeSteps data.
+     * @param {Event} event - The file input change event.
+     */
+    function handleUploadData(event) {
+        const file = event.target.files[0];
+        if (!file) {
+            alert('กรุณาเลือกไฟล์ JSON');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const loadedData = JSON.parse(e.target.result);
+                // Basic validation to ensure the loaded data structure is an array of objects with required fields
+                if (Array.isArray(loadedData) && loadedData.every(item => 
+                    item.id && typeof item.title === 'string' && typeof item.startDate === 'string' && 
+                    typeof item.endDate === 'string' && typeof item.status === 'string')) 
+                {
+                    window.upgradeSteps = loadedData; // Replace the global data with loaded data
+                    renderProgressTable(); // Re-render table with new data
+                    renderProjectTimeline(); // Re-render timeline with new data
+                    alert('อัปโหลดข้อมูลแผนงานสำเร็จแล้ว!');
+                } else {
+                    alert('รูปแบบไฟล์ JSON ไม่ถูกต้อง หรือข้อมูลไม่ครบถ้วน');
+                }
+            } catch (error) {
+                console.error('Error parsing JSON:', error);
+                alert('เกิดข้อผิดพลาดในการอ่านไฟล์ JSON: ' + error.message);
+            }
+        };
+        reader.onerror = (error) => {
+            console.error('Error reading file:', error);
+            alert('เกิดข้อผิดพลาดในการอ่านไฟล์: ' + error.message);
+        };
+        reader.readAsText(file);
+    }
+    window.handleUploadData = handleUploadData; // Expose to window
+
+
+    // --- Event Listeners (after DOMContentLoaded) ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initial rendering of all sections
+        renderProgressTable();
+        renderProjectTimeline();
+        createImprovementsChart();
+        renderBenefits();
+        renderRisks();
+        renderRecommendations();
+
+        // Attach event listeners for new data management buttons
+        const downloadButton = document.getElementById('downloadDataButton');
+        if (downloadButton) {
+            downloadButton.addEventListener('click', handleDownloadData);
+        }
+
+        const uploadInput = document.getElementById('uploadDataInput');
+        if (uploadInput) {
+            uploadInput.addEventListener('change', handleUploadData);
+        }
+
+        // --- Navigation active state logic ---
         const sections = document.querySelectorAll('section[id]');
         const navLinks = document.querySelectorAll('.nav-link');
 
-        window.addEventListener('scroll', () => {
-            let current = '';
-            sections.forEach(section => {
-                const sectionTop = section.offsetTop;
-                if (pageYOffset >= sectionTop - 100) {
-                    current = section.getAttribute('id');
-                }
-            });
+        const observerOptions = {
+            root: null, // relative to the viewport
+            rootMargin: '0px',
+            threshold: 0.5 // Trigger when 50% of the section is visible
+        };
 
-            navLinks.forEach(link => {
-                link.classList.remove('active');
-                if (link.getAttribute('href').includes(current)) {
-                    link.classList.add('active');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    navLinks.forEach(link => {
+                        link.classList.remove('active'); // Remove active from all
+                        if (link.getAttribute('href') === '#' + entry.target.id) {
+                            link.classList.add('active'); // Add active to current section's link
+                        }
+                    });
                 }
             });
+        }, observerOptions);
+
+        // Observe each section
+        sections.forEach(section => {
+            observer.observe(section);
         });
-    }
-    window.handleScrollSpy = handleScrollSpy; // Expose to window
 
-    // --- Main DOMContentLoaded listener ---
-    document.addEventListener('DOMContentLoaded', async () => {
-        // Firebase initialization moved here to ensure all other functions are declared before used.
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-
-        try {
-            firebaseApp = initializeApp(firebaseConfig);
-            db = getFirestore(firebaseApp);
-            auth = getAuth(firebaseApp);
-
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    userId = user.uid;
-                    console.log("Authenticated as:", userId);
-                } else {
-                    console.log("No user found, signing in anonymously...");
-                    await signInAnonymously(auth);
-                    userId = auth.currentUser?.uid || crypto.randomUUID();
-                    console.log("Signed in anonymously as:", userId);
-                }
-                isAuthReady = true;
-                document.getElementById('user-id-display').textContent = `User ID: ${userId}`;
-                initializeFirestoreListeners(); // Start Firestore listeners after auth is ready
-            });
-
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
+        // Set active for initial load based on URL hash or default to overview
+        if (window.location.hash) {
+            const initialHash = window.location.hash.substring(1);
+            const initialNavLink = document.querySelector(`.nav-link[href="#${initialHash}"]`);
+            if (initialNavLink) {
+                initialNavLink.classList.add('active');
             }
-
-        } catch (error) {
-            console.error("Error initializing Firebase or signing in:", error);
-            document.getElementById('loading-message').textContent = 'Error loading application. Please try again.';
+        } else {
+            // Default to overview if no hash
+            const overviewLink = document.querySelector('.nav-link[href="#overview"]');
+            if (overviewLink) {
+                overviewLink.classList.add('active');
+            }
         }
 
-        // Initial renders for static content (these functions are now globally exposed)
-        createBenefits();
-        createRisks();
-        createRecommendations();
-        handleScrollSpy();
-        createImprovementsChart(); // This chart needs improvementsData from the top, and needs to be called here.
     });
 </script>
-
 </body>
 </html>
+�
