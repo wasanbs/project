@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="th" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แผนอัปเกรดระบบ NetIQ Access Manager - ไปรษณีย์ไทย</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutral with Teal Accent -->
+    <!-- Application Structure Plan: A single-page, 'scrollytelling' dashboard design. It starts with a high-level summary, then guides the user through an interactive process timeline for the upgrade path. A dynamic doughnut chart visualizes the categories of improvements, followed by sections for benefits, risks, and recommendations presented in a clear, card-based layout. This structure transforms a static report into an engaging, explorable journey, making complex information digestible for stakeholders by presenting the 'why' and 'what' in a logical, interactive flow. -->
+    <!-- Visualization & Content Choices: 
+        1. Upgrade Path: Report Info -> Sequential upgrade steps. Goal -> Show change over time. Viz/Method -> Interactive HTML/CSS vertical timeline. Interaction -> Clicking a step reveals details (what/why). Justification -> Clearly communicates a multi-step process interactively without overwhelming the user. Library -> Vanilla JS + Tailwind CSS.
+        2. Version Improvements: Report Info -> Features/fixes in each patch. Goal -> Summarize and compare improvements. Viz/Method -> Doughnut Chart (Chart.js) for categories (Security, Performance, Features). Interaction -> Clicking a chart segment filters a detailed list below. Justification -> Provides a quick visual summary of gains and allows users to drill down into areas of interest. Library -> Chart.js.
+        3. Benefits/Risks: Report Info -> Textual lists of pros and cons. Goal -> Inform clearly. Viz/Method -> Card-based grid layout for benefits, two-column layout for risks. Interaction -> Minimal, focus on readability. Justification -> Organizes qualitative information for easy scanning and comprehension. Library -> Tailwind CSS.
+        All textual content is loaded from JS objects to keep the presentation layer clean and easily updatable. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #fdfcfb;
+            color: #3f3f46;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            height: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .timeline-item-content {
+            transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+        .timeline-item.active .timeline-item-content {
+            max-height: 500px;
+            opacity: 1;
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+        }
+        .nav-link:hover {
+            color: #14b8a6;
+        }
+        .nav-link.active {
+            color: #0d9488;
+            border-bottom-color: #0d9488;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Navigation -->
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <div class="text-xl font-bold text-teal-700">ไปรษณีย์ไทย</div>
+            <div class="hidden md:flex space-x-8">
+                <a href="#overview" class="nav-link border-b-2 border-transparent">ภาพรวม</a>
+                <a href="#journey" class="nav-link border-b-2 border-transparent">เส้นทางการอัปเกรด</a>
+                <a href="#benefits" class="nav-link border-b-2 border-transparent">ประโยชน์</a>
+                <a href="#risks" class="nav-link border-b-2 border-transparent">ความเสี่ยง</a>
+                <a href="#approval" class="nav-link border-b-2 border-transparent">ข้อเสนอแนะ</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-8 md:py-12">
+
+        <!-- Hero Section -->
+        <section class="text-center mb-16">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">แผนอัปเกรดระบบ NetIQ Access Manager (NAM)</h1>
+            <p class="text-lg text-gray-600 max-w-3xl mx-auto">ยกระดับความปลอดภัยและประสิทธิภาพการเข้าถึงระบบสารสนเทศ พร้อมบูรณาการ NetIQ Advanced Authentication (AA) เพื่ออนาคตที่มั่นคง</p>
+        </section>
+
+        <!-- Overview Section -->
+        <section id="overview" class="mb-20 pt-16 -mt-16">
+            <h2 class="text-3xl font-bold text-center mb-12">ภาพรวมโครงการ</h2>
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+                    <h3 class="text-2xl font-semibold mb-4 text-red-600">ระบบปัจจุบัน</h3>
+                    <ul class="space-y-3 text-gray-700">
+                        <li class="flex items-start"><span class="text-red-500 mr-3 mt-1">●</span><div><strong>เวอร์ชัน:</strong> NetIQ Access Manager 4.5.3</div></li>
+                        <li class="flex items-start"><span class="text-red-500 mr-3 mt-1">●</span><div><strong>ระบบปฏิบัติการ:</strong> SUSE Linux 12 SP4</div></li>
+                        <li class="flex items-start"><span class="text-red-500 mr-3 mt-1">●</span><div><strong>ข้อจำกัด:</strong> อาจมีช่องโหว่ความปลอดภัยที่ยังไม่ถูกแก้ไข, ขาดคุณสมบัติใหม่ๆ, และส่วนประกอบพื้นฐานเริ่มล้าสมัย</div></li>
+                    </ul>
+                </div>
+                <div class="bg-teal-600 text-white p-8 rounded-xl shadow-lg">
+                    <h3 class="text-2xl font-semibold mb-4">เป้าหมายโครงการ</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start"><span class="text-teal-200 mr-3 mt-1">✔</span><div><strong>เวอร์ชันเป้าหมาย:</strong> NetIQ Access Manager 5.1</div></li>
+                        <li class="flex items-start"><span class="text-teal-200 mr-3 mt-1">✔</span><div><strong>ระบบปฏิบัติการ:</strong> SUSE Linux 12 SP5</div></li>
+                        <li class="flex items-start"><span class="text-teal-200 mr-3 mt-1">✔</span><div><strong>การบูรณาการ:</strong> เพิ่ม NetIQ Advanced Authentication (AA) สำหรับ MFA และ Adaptive Authentication</div></li>
+                        <li class="flex items-start"><span class="text-teal-200 mr-3 mt-1">✔</span><div><strong>ผลลัพธ์:</strong> ระบบที่ปลอดภัย ทันสมัย เสถียร และพร้อมสำหรับอนาคต</div></li>
+                    </ul>
+                </div>
+            </div>
+             <p class="text-center mt-8 text-gray-600">โครงการนี้มีเป้าหมายเพื่อทำให้ระบบจัดการการเข้าถึง (NAM) ของไปรษณีย์ไทยทันสมัยขึ้น เพื่อให้ระบบมีความปลอดภัยและทำงานได้ดียิ่งขึ้น นอกจากนี้ เราจะเพิ่ม NetIQ Advanced Authentication (AA) เข้ามา เพื่อเสริมความปลอดภัยในการยืนยันตัวตนให้มีหลายชั้น (MFA) และสามารถปรับระดับความปลอดภัยตามความเสี่ยงได้</p>
+        </section>
+
+        <!-- Upgrade Journey Section -->
+        <section id="journey" class="mb-20 pt-16 -mt-16">
+            <h2 class="text-3xl font-bold text-center mb-12">เส้นทางการอัปเกรดแบบขั้นบันได</h2>
+            <p class="text-center max-w-2xl mx-auto mb-12 text-gray-600">
+                เราจะดำเนินการอัปเกรดในระบบแยก (วงปิด) เพื่อความปลอดภัยสูงสุดและไม่ส่งผลกระทบต่อการทำงานปัจจุบัน เมื่อทุกขั้นตอนเสร็จสิ้นและผ่านการทดสอบอย่างละเอียดแล้ว จึงจะเปลี่ยนมาใช้ระบบใหม่
+            </p>
+            <div id="timeline-container" class="relative max-w-2xl mx-auto">
+                <!-- Timeline will be generated by JavaScript -->
+            </div>
+        </section>
+        
+        <!-- Improvements Chart Section -->
+        <section id="improvements" class="mb-20 pt-16 -mt-16">
+            <h2 class="text-3xl font-bold text-center mb-4">การปรับปรุงที่สำคัญ</h2>
+            <p class="text-center max-w-2xl mx-auto mb-12 text-gray-600">การอัปเกรดครั้งนี้มุ่งเน้นการพัฒนาใน 3 ด้านหลัก คลิกที่ส่วนของแผนภูมิเพื่อดูรายละเอียด</p>
+            <div class="grid lg:grid-cols-2 gap-8 items-center">
+                <div class="chart-container">
+                    <canvas id="improvementsChart"></canvas>
+                </div>
+                <div id="improvements-details" class="bg-white p-6 rounded-lg shadow-md border border-gray-100 min-h-[300px]">
+                    <!-- Details will be populated by JavaScript -->
+                    <p class="text-gray-500 text-center flex items-center justify-center h-full">กรุณาเลือกส่วนในแผนภูมิเพื่อดูข้อมูล...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Benefits Section -->
+        <section id="benefits" class="mb-20 pt-16 -mt-16">
+            <h2 class="text-3xl font-bold text-center mb-12">ประโยชน์ที่คาดว่าจะได้รับ</h2>
+            <div id="benefits-container" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Benefits will be generated by JavaScript -->
+            </div>
+        </section>
+
+        <!-- Risks Section -->
+        <section id="risks" class="mb-20 pt-16 -mt-16">
+            <h2 class="text-3xl font-bold text-center mb-12">ผลกระทบและความเสี่ยงที่อาจเกิดขึ้น</h2>
+            <div id="risks-container" class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-lg border border-gray-100 space-y-6">
+                <!-- Risks will be generated by JavaScript -->
+            </div>
+        </section>
+
+        <!-- Approval Section -->
+        <section id="approval" class="pt-16 -mt-16">
+             <h2 class="text-3xl font-bold text-center mb-12">ข้อแนะนำและการอนุมัติ</h2>
+            <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+                <h3 class="text-2xl font-semibold mb-6">ข้อแนะนำเพื่อความสำเร็จของโครงการ</h3>
+                <div id="recommendations-container" class="space-y-4">
+                     <!-- Recommendations will be generated by JavaScript -->
+                </div>
+                <div class="mt-12 pt-8 border-t">
+                    <h3 class="text-2xl font-semibold mb-4 text-center">การอนุมัติ (บริษัท ไปรษณีย์ไทย จำกัด)</h3>
+                    <div class="flex flex-wrap justify-center gap-4 mt-6">
+                        <button class="bg-teal-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-teal-700 transition-colors">ดำเนินการทันที</button>
+                        <button class="bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors">ดำเนินการในภายหลัง</button>
+                        <button class="bg-red-100 text-red-700 font-bold py-3 px-6 rounded-lg hover:bg-red-200 transition-colors">ไม่ต้องการดำเนินการ</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-20">
+        <div class="container mx-auto px-6 py-4 text-center text-sm">
+            <p>โครงการบริการบำรุงรักษาระบบบริหารจัดการการเข้าถึงระบบสารสนเทศ ปณท (IDM)</p>
+            <p>สัญญาเลขที่: สป(ส) 106/2567 | วันที่: 20 มิถุนายน 2568</p>
+        </div>
+    </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const upgradeSteps = [
+        {
+            title: "Clone ระบบ NAM ทั้งหมด",
+            description: "สร้างสำเนาของระบบ NAM ปัจจุบัน (v4.5.3) ไปยังสภาพแวดล้อมทดสอบที่แยกออกมา เพื่อให้เราอัปเกรดและทดสอบได้อย่างปลอดภัย ไม่กระทบการทำงานปกติ",
+            version: "v4.5.3"
+        },
+        {
+            title: "อัปเกรด NAM เป็น v4.5.5",
+            description: "อัปเกรด NAM ในระบบแยกเป็น v4.5.5 เพื่อปรับปรุงส่วนประกอบพื้นฐานและแก้ไขปัญหาด้านความปลอดภัยบางประการ",
+            details: [
+                "อัปเดต Tomcat 8.5.72, OpenSSL 1.0.2za, Apache 2.4.51",
+                "แก้ไขปัญหาความปลอดภัยเกี่ยวกับอักขระพิเศษและ SAML"
+            ]
+        },
+        {
+            title: "อัปเกรด SUSE Linux เป็น 12 SP5",
+            description: "การอัปเกรดระบบปฏิบัติการ SUSE Linux เป็น 12 SP5 เป็นสิ่งจำเป็นก่อนอัปเกรด NAM ไป v5.x เพื่อให้ระบบเข้ากันได้ดีและทำงานได้ราบรื่น",
+            details: [
+                "เป็นข้อกำหนดสำคัญ (Prerequisite) สำหรับ NAM v5.x",
+                "ป้องกันปัญหาทางเทคนิคและความเข้ากันได้ของระบบ"
+            ]
+        },
+        {
+            title: "อัปเกรด NAM เป็น v5.0.3",
+            description: "อัปเกรด NAM ในระบบแยกเป็น v5.0.3 ซึ่งมาพร้อมคุณสมบัติใหม่และการแก้ไขช่องโหว่ที่สำคัญ",
+            details: [
+                "รองรับ Kerberos Privileged Attribute Certificate (PAC)",
+                "แก้ไขช่องโหว่ร้ายแรง Log4j และ Multiple XSS (CVE-2022-26325)",
+                "อัปเดต Tomcat 9.0.65, Apache 2.4.54"
+            ]
+        },
+        {
+            title: "อัปเกรด NAM เป็น v5.1",
+            description: "อัปเกรดสู่เวอร์ชันเป้าหมาย v5.1 ที่มีการปรับปรุงครั้งใหญ่ด้านการจัดการและความปลอดภัย",
+            details: [
+                "หน้าจอจัดการใหม่ (Enhanced Administration Console) บน Angular UI",
+                "ปรับปรุง REST APIs สำหรับการทำงานอัตโนมัติ",
+                "แก้ไขช่องโหว่ Directory traversal, User impersonation และ Multiple XSS"
+            ]
+        },
+        {
+            title: "ตรวจสอบและทดสอบระบบ",
+            description: "ตรวจสอบและทดสอบระบบ NAM ที่อัปเกรดแล้วอย่างละเอียดในระบบแยก เพื่อให้แน่ใจว่าทุกอย่างทำงานถูกต้องและเสถียร ก่อนที่จะนำไปใช้งานจริง"
+        }
+    ];
+
+    const improvementsData = {
+        labels: ['ความปลอดภัย', 'ประสิทธิภาพ', 'คุณสมบัติใหม่'],
+        datasets: [{
+            data: [60, 25, 15],
+            backgroundColor: ['#0d9488', '#14b8a6', '#5eead4'],
+            hoverBackgroundColor: ['#047857', '#0f766e', '#2dd4bf'],
+            borderColor: '#fdfcfb',
+            borderWidth: 4
+        }],
+        details: {
+            'ความปลอดภัย': [
+                'แก้ไขช่องโหว่ร้ายแรง: Log4j, Multiple XSS, Directory Traversal, User Impersonation',
+                'เพิ่มการรองรับ Kerberos PAC เพื่อการยืนยันตัวตนที่ปลอดภัยขึ้น',
+                'แนะนำ `SecureCredentialsAuthClass` สำหรับเข้ารหัสรหัสผ่านฝั่ง Client',
+                'เพิ่มการยืนยันตัวตนหลายปัจจัย (MFA) และ Adaptive Authentication ผ่าน AA'
+            ],
+            'ประสิทธิภาพ': [
+                'อัปเดตส่วนประกอบหลัก: Tomcat, Apache, OpenSSL, JRE',
+                'ปรับปรุง Administration Console ใหม่ทั้งหมดด้วย Angular UI ทำงานเร็วขึ้น',
+                'ปรับปรุงการทำงานของ Single Sign-On (SSO)',
+                'ลดภาระงานจัดการด้วย REST APIs ที่ดีขึ้น'
+            ],
+            'คุณสมบัติใหม่': [
+                'หน้าจอจัดการใหม่ (Angular UI) ที่ทันสมัยและใช้งานง่าย',
+                'Enhanced REST APIs พร้อมเอกสาร Swagger สำหรับนักพัฒนา',
+                'ความสามารถในการตรวจสอบการเปลี่ยนแปลงการตั้งค่า (Auditing)',
+                'บูรณาการกับ NetIQ Advanced Authentication (AA) ได้อย่างสมบูรณ์'
+            ]
+        }
+    };
+    
+    const benefits = [
+        {
+            icon: '🛡️',
+            title: 'ความปลอดภัยแข็งแกร่งขึ้น',
+            description: 'แก้ไขช่องโหว่สำคัญ รองรับการยืนยันตัวตนสมัยใหม่ และเพิ่ม MFA เพื่อป้องกันการเข้าถึงที่ไม่ได้รับอนุญาต'
+        },
+        {
+            icon: '⚡',
+            title: 'ประสิทธิภาพและความเสถียร',
+            description: 'อัปเดตส่วนประกอบพื้นฐานทำให้ระบบทำงานเร็วขึ้น ลดความเสี่ยงจากปัญหาทางเทคนิคและมีความน่าเชื่อถือสูง'
+        },
+        {
+            icon: '⚙️',
+            title: 'บริหารจัดการง่ายและยืดหยุ่น',
+            description: 'ด้วยหน้าจอจัดการใหม่และ REST APIs ที่ดีขึ้น ช่วยลดภาระงานของทีม IT และทำงานอัตโนมัติได้มากขึ้น'
+        },
+        {
+            icon: '🤝',
+            title: 'ประสบการณ์ผู้ใช้ที่ดีขึ้น',
+            description: 'Single Sign-On (SSO) ที่มีประสิทธิภาพช่วยให้ผู้ใช้เข้าถึงแอปพลิเคชันต่างๆ ได้อย่างราบรื่นและสะดวกสบาย'
+        },
+        {
+            icon: '🌍',
+            title: 'รองรับการทำงานยุคใหม่',
+            description: 'การเพิ่ม AA ช่วยให้รองรับการทำงานนอกสถานที่ (Mobile Workforce) และการ Login แบบ Offline ได้อย่างปลอดภัย'
+        },
+        {
+            icon: '�',
+            title: 'พร้อมสำหรับอนาคต',
+            description: 'ระบบที่ทันสมัยพร้อมรองรับเทคโนโลยีใหม่ๆ และการเปลี่ยนแปลงทางธุรกิจในอนาคตได้อย่างมั่นใจ'
+        }
+    ];
+
+    const risks = [
+        {
+            title: 'ความซับซ้อนในการดำเนินการ',
+            description: 'ระบบ IAM มีความซับซ้อนในการตั้งค่า ซึ่งอาจนำไปสู่ข้อผิดพลาดได้',
+            mitigation: 'ดำเนินการแบบขั้นบันไดในระบบแยก (วงปิด) และทดสอบอย่างละเอียดโดยทีมผู้เชี่ยวชาญ'
+        },
+        {
+            title: 'ปัญหาความเข้ากันได้ของระบบ',
+            description: 'ส่วนประกอบต่างๆ อาจมีปัญหาความเข้ากันไม่ได้ โดยเฉพาะการอัปเกรดระบบปฏิบัติการ',
+            mitigation: 'ปฏิบัติตามข้อกำหนดของผลิตภัณฑ์อย่างเคร่งครัด (เช่น อัปเกรด SUSE Linux ก่อน) และทดสอบการทำงานร่วมกันอย่างละเอียด'
+        },
+        {
+            title: 'ผลกระทบต่อผู้ใช้งาน',
+            description: 'การเปลี่ยนแปลงระบบอาจสร้างความสับสนให้ผู้ใช้งานในช่วงแรก',
+            mitigation: 'วางแผนการสื่อสารและจัดทำคู่มือให้ผู้ใช้ทราบล่วงหน้า โดยเฉพาะการเปลี่ยนแปลงเรื่องการยืนยันตัวตน (MFA)'
+        }
+    ];
+
+    const recommendations = [
+        "ควรมีการวางแผนโครงการที่ละเอียดรอบคอบ จัดสรรทรัพยากรที่เพียงพอ และบริหารจัดการความเสี่ยงอย่างต่อเนื่อง",
+        "การทดสอบในสภาพแวดล้อมแยกควรครอบคลุมทุกด้าน ทั้งการทำงาน ประสิทธิภาพ และความปลอดภัย เพื่อให้มั่นใจก่อนนำไปใช้จริง",
+        "ควรมีการสื่อสารที่ชัดเจนไปยังผู้ใช้งานเกี่ยวกับประโยชน์และการเปลี่ยนแปลงที่อาจเกิดขึ้น โดยเฉพาะการนำ MFA มาใช้",
+        "หลังการอัปเกรด ควรมีการตรวจสอบประสิทธิภาพและความปลอดภัยของระบบอย่างต่อเนื่อง เพื่อให้มั่นใจว่าระบบทำงานได้ตามที่คาดหวัง"
+    ];
+
+
+    function createTimeline() {
+        const container = document.getElementById('timeline-container');
+        if (!container) return;
+        
+        let content = `<div class="absolute top-0 left-4 md:left-1/2 -ml-px h-full w-0.5 bg-gray-200"></div>`;
+        
+        upgradeSteps.forEach((step, index) => {
+            const sideClass = index % 2 === 0 ? 'md:pr-8 md:text-right' : 'md:pl-8';
+            const itemAlignment = index % 2 === 0 ? 'md:items-end' : 'md:items-start';
+            const textAlignment = index % 2 === 0 ? 'md:text-right' : 'md:text-left';
+
+            content += `
+                <div class="timeline-item relative mb-8" data-index="${index}">
+                    <div class="flex md:grid md:grid-cols-2 items-start">
+                        <div class="hidden md:block ${sideClass}"></div>
+                        <div class="hidden md:block"></div>
+                    </div>
+                    <div class="absolute top-1 left-4 md:left-1/2 -ml-2 h-4 w-4 rounded-full bg-teal-600 border-2 border-white"></div>
+                    <div class="ml-10 md:ml-0 md:grid md:grid-cols-2">
+                        <div class="${index % 2 === 0 ? 'md:col-start-1 md:pr-8' : 'md:col-start-2 md:pl-8'}">
+                            <div class="bg-white p-4 rounded-lg shadow-md border border-gray-100 cursor-pointer hover:shadow-xl transition-shadow">
+                                <h4 class="font-bold text-lg text-teal-700">${index+1}. ${step.title}</h4>
+                                <p class="text-sm text-gray-600 mt-1">${step.description}</p>
+                                <div class="timeline-item-content">
+                                    ${step.details ? `
+                                    <div class="mt-3 pt-3 border-t border-gray-200">
+                                        <h5 class="font-semibold text-sm mb-1">รายละเอียดการเปลี่ยนแปลง:</h5>
+                                        <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
+                                            ${step.details.map(d => `<li>${d}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = content;
+        
+        container.addEventListener('click', (e) => {
+            const item = e.target.closest('.timeline-item');
+            if(item){
+                item.classList.toggle('active');
+                document.querySelectorAll('.timeline-item').forEach(otherItem => {
+                    if(otherItem !== item) {
+                        otherItem.classList.remove('active');
+                    }
+                });
+            }
+        });
+    }
+
+    function createImprovementsChart() {
+        const ctx = document.getElementById('improvementsChart');
+        if (!ctx) return;
+
+        const chart = new Chart(ctx, {
+            type: 'doughnut',
+            data: improvementsData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            font: {
+                                size: 14,
+                                family: "'Sarabun', sans-serif"
+                            }
+                        }
+                    },
+                    tooltip: {
+                        titleFont: { family: "'Sarabun', sans-serif" },
+                        bodyFont: { family: "'Sarabun', sans-serif" },
+                    }
+                },
+                onClick: (event, elements) => {
+                    if (elements.length > 0) {
+                        const i = elements[0].index;
+                        const label = chart.data.labels[i];
+                        updateImprovementsDetails(label);
+                    }
+                }
+            }
+        });
+    }
+
+    function updateImprovementsDetails(category) {
+        const container = document.getElementById('improvements-details');
+        if (!container) return;
+
+        const details = improvementsData.details[category];
+        if (!details) return;
+
+        let content = `
+            <h3 class="font-bold text-xl mb-4 text-teal-700">${category}</h3>
+            <ul class="list-disc list-inside space-y-2 text-gray-700">
+                ${details.map(d => `<li>${d}</li>`).join('')}
+            </ul>
+        `;
+        container.innerHTML = content;
+    }
+    
+    function createBenefits() {
+        const container = document.getElementById('benefits-container');
+        if(!container) return;
+        
+        container.innerHTML = benefits.map(benefit => `
+            <div class="bg-white p-6 rounded-lg shadow-md border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all">
+                <div class="text-4xl mb-4">${benefit.icon}</div>
+                <h3 class="font-bold text-lg mb-2">${benefit.title}</h3>
+                <p class="text-gray-600 text-sm">${benefit.description}</p>
+            </div>
+        `).join('');
+    }
+
+    function createRisks() {
+        const container = document.getElementById('risks-container');
+        if(!container) return;
+
+        container.innerHTML = risks.map(risk => `
+            <div>
+                <h4 class="font-bold text-lg">${risk.title}</h4>
+                <p class="text-gray-600 mt-1">${risk.description}</p>
+                <div class="mt-2 bg-teal-50 border border-teal-200 text-teal-800 p-3 rounded-lg flex items-start">
+                    <span class="font-bold mr-2 text-sm">การป้องกัน:</span>
+                    <p class="text-sm">${risk.mitigation}</p>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function createRecommendations() {
+        const container = document.getElementById('recommendations-container');
+        if(!container) return;
+
+        container.innerHTML = `
+            <ul class="list-decimal list-inside space-y-3 text-gray-700">
+                ${recommendations.map(rec => `<li>${rec}</li>`).join('')}
+            </ul>
+        `;
+    }
+
+    function handleScrollSpy() {
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href').includes(current)) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    }
+
+    createTimeline();
+    createImprovementsChart();
+    createBenefits();
+    createRisks();
+    createRecommendations();
+    handleScrollSpy();
+});
+</script>
+
+</body>
+</html>
+�
