@@ -224,9 +224,7 @@
                 </div>
             </div>
 
-            <p class="text-center max-w-2xl mx-auto mt-8 text-gray-600 font-semibold">
-                *ข้อมูลความคืบหน้าจะถูกอัปเดตบนหน้าเว็บแบบเรียลไทม์เท่านั้น และจะไม่ถูกบันทึกถาวรเมื่อปิดหน้าเว็บ หากต้องการบันทึก/โหลดข้อมูลแผนงาน กรุณาใช้ "เครื่องมือจัดการข้อมูล JSON" แยกต่างหาก โดยการคัดลอกข้อมูล JSON ระหว่างสองแอปพลิเคชันด้วยตนเอง.
-            </p>
+        
         </section>
         
         <!-- Improvements Chart Section -->
@@ -302,13 +300,13 @@
     // --- Static Data Definitions (All data is now hardcoded) ---
     // Make upgradeSteps a global variable or accessible via window for updateTaskDataAndRenderUI and file operations
     window.upgradeSteps = [ // This array will be updated locally, but not persistently saved
-        { id: "step-aa", title: "ติดตั้งและปรับแต่ง NetIQ (AA)", description: "ดำเนินการติดตั้งและปรับแต่ง NetIQ Advanced Authentication เพื่อรองรับการยืนยันตัวตนแบบ MFA และ Adaptive Authentication", version: "AA", startDate: "2025-05-01", endDate: "2025-05-20", status: "Completed", assignee: "THP", order: 0 }, // New AA task
+        { id: "step-aa", title: "ติดตั้งและปรับแต่ง NetIQ (AA)", description: "ดำเนินการติดตั้งและปรับแต่ง NetIQ Advanced Authentication เพื่อรองรับการยืนยันตัวตนแบบ MFA และ Adaptive Authentication", version: "AA", startDate: "2025-05-01", endDate: "2025-05-20", status: "Completed", assignee: "Busisoft", order: 0 }, // New AA task
         { id: "step-1", title: "Clone ระบบ NAM ทั้งหมด", description: "สร้างสำเนาของระบบ NAM ปัจจุบัน (v4.5.3) ไปยังสภาพแวดล้อมทดสอบที่แยกออกมา เพื่อให้เราอัปเกรดและทดสอบได้อย่างปลอดภัย ไม่กระทบการทำงานปกติ", version: "v4.5.3", startDate: "2025-06-10", endDate: "2025-06-10", status: "In Progress", assignee: "THP", order: 1 },
-        { id: "step-2", title: "อัปเกรด NAM เป็น v4.5.5", description: "อัปเกรด NAM ในระบบแยกเป็น v4.5.5 เพื่อปรับปรุงส่วนประกอบพื้นฐานและแก้ไขปัญหาด้านความปลอดภัยบางประการ", details: ["อัปเดต Tomcat 8.5.72, OpenSSL 1.0.2za, Apache 2.4.51", "แก้ไขปัญหาความปลอดภัยเกี่ยวกับอักขระพิเศษและ SAML"], version: "v4.5.5", startDate: "2025-06-11", endDate: "2025-06-20", status: "Not Started", assignee: "THP", order: 2 },
-        { id: "step-3", title: "อัปเกรด SUSE Linux เป็น 12 SP5", description: "การอัปเกรดระบบปฏิบัติการ SUSE Linux เป็น 12 SP5 เป็นสิ่งจำเป็นก่อนอัปเกรด NAM ไป v5.x เพื่อให้ระบบเข้ากันได้ดีและทำงานได้ราบรื่น", details: ["เป็นข้อกำหนดสำคัญ (Prerequisite) สำหรับ NAM v5.x", "ป้องกันปัญหาทางเทคนิคและความเข้ากันได้ของระบบ"], version: "SUSE Linux 12 SP5", startDate: "2025-06-21", endDate: "2025-06-30", status: "Not Started", assignee: "THP", order: 3 },
-        { id: "step-4", title: "อัปเกรด NAM เป็น v5.0.3", description: "อัปเกรด NAM ในระบบแยกเป็น v5.0.3 ซึ่งมาพร้อมคุณสมบัติใหม่และการแก้ไขช่องโหว่ที่สำคัญ", details: ["รองรับ Kerberos Privileged Attribute Certificate (PAC)", "แก้ไขช่องโหว่ร้ายแรง Log4j และ Multiple XSS (CVE-2022-26325)", "อัปเดต Tomcat 9.0.65, Apache 2.4.54"], version: "v5.0.3", startDate: "2025-07-01", endDate: "2025-07-10", status: "Not Started", assignee: "THP", order: 4 },
-        { id: "step-5", title: "อัปเกรด NAM เป็น v5.1", description: "อัปเกรดสู่เวอร์ชันเป้าหมาย v5.1 ที่มีการปรับปรุงครั้งใหญ่ด้านการจัดการและความปลอดภัย", details: ["หน้าจอจัดการใหม่ (Enhanced Administration Console) บน Angular UI", "ปรับปรุง REST APIs สำหรับการทำงานอัตโนมัติ", "แก้ไขช่องโหว่ Directory traversal, User impersonation และ Multiple XSS"], version: "v5.1", startDate: "2025-07-11", endDate: "2025-07-20", status: "Not Started", assignee: "THP", order: 5 },
-        { id: "step-6", title: "ตรวจสอบและทดสอบระบบ", description: "ตรวจสอบและทดสอบระบบ NAM ที่อัปเกรดแล้วอย่างละเอียดในระบบแยก เพื่อให้แน่ใจว่าทุกอย่างทำงานถูกต้องและเสถียร ก่อนที่จะนำไปใช้งานจริง", version: "v5.1", startDate: "2025-07-21", endDate: "2025-07-27", status: "Not Started", assignee: "THP", order: 6 }
+        { id: "step-2", title: "อัปเกรด NAM เป็น v4.5.5", description: "อัปเกรด NAM ในระบบแยกเป็น v4.5.5 เพื่อปรับปรุงส่วนประกอบพื้นฐานและแก้ไขปัญหาด้านความปลอดภัยบางประการ", details: ["อัปเดต Tomcat 8.5.72, OpenSSL 1.0.2za, Apache 2.4.51", "แก้ไขปัญหาความปลอดภัยเกี่ยวกับอักขระพิเศษและ SAML"], version: "v4.5.5", startDate: "2025-06-11", endDate: "2025-06-20", status: "Not Started", assignee: "Busisoft", order: 2 },
+        { id: "step-3", title: "อัปเกรด SUSE Linux เป็น 12 SP5", description: "การอัปเกรดระบบปฏิบัติการ SUSE Linux เป็น 12 SP5 เป็นสิ่งจำเป็นก่อนอัปเกรด NAM ไป v5.x เพื่อให้ระบบเข้ากันได้ดีและทำงานได้ราบรื่น", details: ["เป็นข้อกำหนดสำคัญ (Prerequisite) สำหรับ NAM v5.x", "ป้องกันปัญหาทางเทคนิคและความเข้ากันได้ของระบบ"], version: "SUSE Linux 12 SP5", startDate: "2025-06-21", endDate: "2025-06-30", status: "Not Started", assignee: "Busisoft", order: 3 },
+        { id: "step-4", title: "อัปเกรด NAM เป็น v5.0.3", description: "อัปเกรด NAM ในระบบแยกเป็น v5.0.3 ซึ่งมาพร้อมคุณสมบัติใหม่และการแก้ไขช่องโหว่ที่สำคัญ", details: ["รองรับ Kerberos Privileged Attribute Certificate (PAC)", "แก้ไขช่องโหว่ร้ายแรง Log4j และ Multiple XSS (CVE-2022-26325)", "อัปเดต Tomcat 9.0.65, Apache 2.4.54"], version: "v5.0.3", startDate: "2025-07-01", endDate: "2025-07-10", status: "Not Started", assignee: "Busisoft", order: 4 },
+        { id: "step-5", title: "อัปเกรด NAM เป็น v5.1", description: "อัปเกรดสู่เวอร์ชันเป้าหมาย v5.1 ที่มีการปรับปรุงครั้งใหญ่ด้านการจัดการและความปลอดภัย", details: ["หน้าจอจัดการใหม่ (Enhanced Administration Console) บน Angular UI", "ปรับปรุง REST APIs สำหรับการทำงานอัตโนมัติ", "แก้ไขช่องโหว่ Directory traversal, User impersonation และ Multiple XSS"], version: "v5.1", startDate: "2025-07-11", endDate: "2025-07-20", status: "Not Started", assignee: "Busisoft", order: 5 },
+        { id: "step-6", title: "ตรวจสอบและทดสอบระบบ", description: "ตรวจสอบและทดสอบระบบ NAM ที่อัปเกรดแล้วอย่างละเอียดในระบบแยก เพื่อให้แน่ใจว่าทุกอย่างทำงานถูกต้องและเสถียร ก่อนที่จะนำไปใช้งานจริง", version: "v5.1", startDate: "2025-07-21", endDate: "2025-07-27", status: "Not Started", assignee: "Busisoft", order: 6 }
     ];
 
     const improvementsChartData = {
