@@ -233,6 +233,7 @@
                     </thead>
                     <tbody id="progress-table-body" class="bg-white divide-y divide-gray-200">
                         <!-- Progress rows will be rendered here by JS -->
+                        <tr><td colspan="7" class="text-center py-4 text-gray-500">กำลังโหลดข้อมูล...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -410,18 +411,8 @@
             document.getElementById('project-timeline').innerHTML = '<div class="text-center py-4 text-gray-500">กำลังโหลดข้อมูล Timeline...</div>';
             document.getElementById('version-details-display').innerHTML = '<p class="text-gray-500 text-center flex items-center justify-center h-full">กำลังโหลดข้อมูลเวอร์ชัน...</p>';
 
-            // Fetch data from the local JSON file
-            // IMPORTANT: This 'fetch' call might fail in certain browser environments (e.g., file:// protocol, some iframes)
-            // If you encounter 'Failed to parse URL' or 'Network error', you might need to host the JSON file on a simple web server
-            // or re-embed the data directly into this HTML file as was done in previous versions.
-            const response = await fetch('./netiq_upgrade_plan_data.json');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status} - Check if 'netiq_upgrade_plan_data.json' is accessible.`);
-            }
-            const data = await response.json();
-
-            window.upgradeSteps = data.upgradeSteps.sort((a, b) => a.order - b.order); // Sort upon loading
-            window.versionDetailsData = data.versionDetailsData;
+            // Data is now directly embedded, no fetch needed.
+            // window.upgradeSteps and window.versionDetailsData are already populated.
 
             // Render all sections with loaded data
             renderProgressTable();
