@@ -7,7 +7,7 @@
     "startDate": "2025-05-01",
     "endDate": "2025-05-20",
     "status": "Completed",
-    "assignee": "THP",
+    "assignee": "Busisoft",
     "order": 0
   },
   {
@@ -33,7 +33,7 @@
     "startDate": "2025-06-11",
     "endDate": "2025-06-20",
     "status": "Not Started",
-    "assignee": "THP",
+    "assignee": "Busisoft",
     "order": 2
   },
   {
@@ -48,7 +48,7 @@
     "startDate": "2025-06-21",
     "endDate": "2025-06-30",
     "status": "Not Started",
-    "assignee": "THP",
+    "assignee": "Busisoft",
     "order": 3
   },
   {
@@ -64,7 +64,7 @@
     "startDate": "2025-07-01",
     "endDate": "2025-07-10",
     "status": "Not Started",
-    "assignee": "THP",
+    "assignee": "Busisoft",
     "order": 4
   },
   {
@@ -80,7 +80,7 @@
     "startDate": "2025-07-11",
     "endDate": "2025-07-20",
     "status": "Not Started",
-    "assignee": "THP",
+    "assignee": "Busisoft",
     "order": 5
   },
   {
@@ -91,7 +91,7 @@
     "startDate": "2025-07-21",
     "endDate": "2025-07-27",
     "status": "Not Started",
-    "assignee": "THP",
+    "assignee": "Busisoft",
     "order": 6
   }
 ]
