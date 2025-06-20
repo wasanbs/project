@@ -1,10 +1,21 @@
 [
   {
+    "id": "step-aa",
+    "title": "ติดตั้งและปรับแต่ง NetIQ (AA)",
+    "description": "ดำเนินการติดตั้งและปรับแต่ง NetIQ Advanced Authentication เพื่อรองรับการยืนยันตัวตนแบบ MFA และ Adaptive Authentication",
+    "version": "AA",
+    "startDate": "2025-05-01",
+    "endDate": "2025-05-20",
+    "status": "Completed",
+    "assignee": "THP",
+    "order": 0
+  },
+  {
     "id": "step-1",
     "title": "Clone ระบบ NAM ทั้งหมด",
     "description": "สร้างสำเนาของระบบ NAM ปัจจุบัน (v4.5.3) ไปยังสภาพแวดล้อมทดสอบที่แยกออกมา เพื่อให้เราอัปเกรดและทดสอบได้อย่างปลอดภัย ไม่กระทบการทำงานปกติ",
     "version": "v4.5.3",
-    "startDate": "2025-06-01",
+    "startDate": "2025-06-10",
     "endDate": "2025-06-10",
     "status": "In Progress",
     "assignee": "THP",
