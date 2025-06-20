@@ -249,9 +249,7 @@
                 </div>
             </div>
 
-            <p class="text-center max-w-2xl mx-auto mt-8 text-gray-600 font-semibold">
-                *ข้อมูลความคืบหน้าจะถูกอัปเดตบนหน้าเว็บแบบเรียลไทม์เท่านั้น และจะไม่ถูกบันทึกถาวรเมื่อปิดหน้าเว็บ หากต้องการบันทึก/โหลดข้อมูลแผนงาน กรุณาใช้ "เครื่องมือจัดการข้อมูล JSON" แยกต่างหาก โดยการคัดลอกข้อมูล JSON ระหว่างสองแอปพลิเคชันด้วยตนเอง.
-            </p>
+
         </section>
         
         <!-- Improvements Chart Section -->
@@ -328,7 +326,7 @@
     window.upgradeSteps = [];
     window.versionDetailsData = [];
 
-    // Additional data for the charts and other sections
+    // Additional data for the charts and other sections (these can remain embedded as they are static project info)
     window.improvementsChartData = {
         labels: ['ความปลอดภัย', 'ประสิทธิภาพ', 'คุณสมบัติใหม่'],
         datasets: [{
@@ -362,7 +360,7 @@
             description: 'Single Sign-On (SSO) ที่มีประสิทธิภาพช่วยให้ผู้ใช้เข้าถึงแอปพลิเคชันต่างๆ ได้อย่างราบรื่นและสะดวกสบาย'
         },
         {
-            icon: '🌍',
+            icon: '�',
             title: 'รองรับการทำงานยุคใหม่',
             description: 'การเพิ่ม AA ช่วยให้รองรับการทำงานนอกสถานที่ (Mobile Workforce) และการ Login แบบ Offline ได้อย่างปลอดภัย'
         },
@@ -412,9 +410,6 @@
             document.getElementById('version-details-display').innerHTML = '<p class="text-gray-500 text-center flex items-center justify-center h-full">กำลังโหลดข้อมูลเวอร์ชัน...</p>';
 
             // Fetch data from the local JSON file
-            // IMPORTANT: This 'fetch' call might fail in certain browser environments (e.g., file:// protocol, some iframes)
-            // If you encounter 'Failed to parse URL' or 'Network error', you might need to host the JSON file on a simple web server
-            // or re-embed the data directly into this HTML file as was done in previous versions.
             const response = await fetch('./netiq_upgrade_plan_data.json');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status} - Check if 'netiq_upgrade_plan_data.json' is accessible.`);
@@ -821,7 +816,7 @@
 
     // --- Event Listeners (after DOMContentLoaded) ---
     document.addEventListener('DOMContentLoaded', () => {
-        // Initialize the app content directly as data is embedded
+        // Load data and then render the app
         loadDataAndRenderApp();
 
         // --- Navigation active state logic ---
@@ -871,3 +866,4 @@
 </script>
 </body>
 </html>
+�
