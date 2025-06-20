@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Chosen Palette: Busisoft Blue Theme - Primary: #0D94E8, Medium: #2196F3, Light: #E3F2FD -->
     <!-- Application Structure Plan: Reverted to the structure of V3, now with all data directly embedded in the HTML/JavaScript. No Firebase integration for persistence. Features overview, interactive progress table (local updates only), visual timeline, and a simple doughnut chart for improvements categories. This version prioritizes offline usability and direct embedability. -->
-    <!-- Visualization & Content Choices: 
+    <!-- Visualization & Content Choices:
         1. Upgrade Path & Progress Table: Sequential upgrade steps with dates/status. Goal -> Track real-time progress. Viz/Method -> Dynamic HTML Table with input fields (date, select). Interaction -> Users can update dates/status which are saved locally (not persistent). Justification -> Provides interactive tracking without external dependencies. Library -> Vanilla JS + Tailwind CSS.
         2. Project Timeline (Visual Gantt-like): Task durations and sequence. Goal -> Provide visual overview of project plan and timeline. Viz/Method -> Custom HTML/CSS/JS timeline with dynamic bar widths and positions. Interaction -> Visually represents progress, updates based on local table changes. Justification -> Fulfills user request for a "project plan with timeline". Library -> Vanilla JS + Tailwind CSS.
         3. Version Improvements: Features/fixes in each patch. Goal -> Summarize and compare improvements. Viz/Method -> Doughnut Chart (Chart.js) for categories (Security, Performance, Features). Interaction -> Clicking a chart segment filters a detailed list below. Justification -> Provides a quick visual summary of gains and allows users to drill down into areas of interest. Library -> Chart.js.
@@ -73,7 +73,7 @@
             margin-bottom: 10px;
             font-size: 0.875rem; /* text-sm */
             color: #6b7280; /* gray-500 */
-            padding-left: 270px; /* Adjusted space for labels to align axis */
+            padding-left: 460px; /* Adjusted space for labels to align axis */
             padding-right: 10px;
         }
         .timeline-track {
@@ -84,20 +84,21 @@
             background-color: #f3f4f6; /* gray-100 */
             border-radius: 5px;
             position: relative;
+            width: 100%; /* Ensure track itself spans full width of its parent */
         }
         .timeline-label-area {
             flex-shrink: 0;
-            width: 250px; /* Fixed width for the label area */
+            width: 450px; /* Increased fixed width for the label area */
             padding-left: 10px; /* Padding from the left edge of the track */
             padding-right: 10px; /* Padding between label and bar area */
             text-align: left; /* Align text to the left for clarity */
             font-size: 0.875rem; /* text-sm */
             color: #3f3f46; /* text-gray-800 */
-            white-space: normal; /* Allow text to wrap */
-            overflow: visible; /* Ensure text is not hidden */
-            text-overflow: unset; /* Prevent ellipsis */
+            white-space: nowrap; /* Prevent text wrapping */
+            overflow: hidden; /* Hide overflow text */
+            text-overflow: ellipsis; /* Add ellipsis for overflow */
             box-sizing: border-box;
-            word-break: break-word; /* Break long words */
+            z-index: 10; /* Ensure label is above the track background and bar */
         }
         .timeline-chart-area {
             flex-grow: 1;
@@ -121,6 +122,25 @@
         .timeline-bar.status-InProgress { background-color: #2196F3; /* medium-blue */ }
         .timeline-bar.status-Completed { background-color: #10b981; /* green-500 */ }
 
+        /* Table specific styles */
+        th {
+            white-space: nowrap; /* Prevent table headers from wrapping */
+            padding: 12px 24px; /* Default padding */
+        }
+        td {
+            padding: 16px 24px; /* Default padding for table data cells */
+        }
+        /* Specific override for the "ขั้นตอน" column to allow text wrapping and proper width */
+        #progress-table-body td:nth-child(2) { /* Selects the second td in each row (Step column) */
+            white-space: normal; /* Allow text to wrap */
+            word-break: break-word; /* Break long words if necessary */
+            min-width: 400px; /* Set a minimum width for this column to ensure content fits */
+        }
+        /* Ensure description text in table cells is not bold */
+        #progress-table-body td .text-xs.text-gray-500 {
+            font-weight: normal; /* Override any potential bolding */
+        }
+
         /* Version Details styles */
         .version-card {
             cursor: pointer;
@@ -136,9 +156,13 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
+        /* Ensure summary and details in version details section are not bold */
+        #version-details-display p, #version-details-display li {
+            font-weight: normal; /* Override any potential bolding */
+        }
     </style>
 </head>
-<body class="antialiased">
+<body>
 
     <!-- Header & Navigation -->
     <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
@@ -224,7 +248,9 @@
                 </div>
             </div>
 
-        
+            <p class="text-center max-w-2xl mx-auto mt-8 text-gray-600 font-semibold">
+                *ข้อมูลความคืบหน้าจะถูกอัปเดตบนหน้าเว็บแบบเรียลไทม์เท่านั้น และจะไม่ถูกบันทึกถาวรเมื่อปิดหน้าเว็บ หากต้องการบันทึก/โหลดข้อมูลแผนงาน กรุณาใช้ "เครื่องมือจัดการข้อมูล JSON" แยกต่างหาก โดยการคัดลอกข้อมูล JSON ระหว่างสองแอปพลิเคชันด้วยตนเอง.
+            </p>
         </section>
         
         <!-- Improvements Chart Section -->
@@ -300,13 +326,13 @@
     // --- Static Data Definitions (All data is now hardcoded) ---
     // Make upgradeSteps a global variable or accessible via window for updateTaskDataAndRenderUI and file operations
     window.upgradeSteps = [ // This array will be updated locally, but not persistently saved
-        { id: "step-aa", title: "ติดตั้งและปรับแต่ง NetIQ (AA)", description: "ดำเนินการติดตั้งและปรับแต่ง NetIQ Advanced Authentication เพื่อรองรับการยืนยันตัวตนแบบ MFA และ Adaptive Authentication", version: "AA", startDate: "2025-05-01", endDate: "2025-05-20", status: "Completed", assignee: "Busisoft", order: 0 }, // New AA task
-        { id: "step-1", title: "Clone ระบบ NAM ทั้งหมด", description: "สร้างสำเนาของระบบ NAM ปัจจุบัน (v4.5.3) ไปยังสภาพแวดล้อมทดสอบที่แยกออกมา เพื่อให้เราอัปเกรดและทดสอบได้อย่างปลอดภัย ไม่กระทบการทำงานปกติ", version: "v4.5.3", startDate: "2025-06-01", endDate: "2025-06-01", status: "In Progress", assignee: "THP", order: 1 },
-        { id: "step-2", title: "อัปเกรด NAM เป็น v4.5.5", description: "อัปเกรด NAM ในระบบแยกเป็น v4.5.5 เพื่อปรับปรุงส่วนประกอบพื้นฐานและแก้ไขปัญหาด้านความปลอดภัยบางประการ", details: ["อัปเดต Tomcat 8.5.72, OpenSSL 1.0.2za, Apache 2.4.51", "แก้ไขปัญหาความปลอดภัยเกี่ยวกับอักขระพิเศษและ SAML"], version: "v4.5.5", startDate: "2025-06-20", endDate: "2025-06-20", status: "Not Started", assignee: "Busisoft", order: 2 },
-        { id: "step-3", title: "อัปเกรด SUSE Linux เป็น 12 SP5", description: "การอัปเกรดระบบปฏิบัติการ SUSE Linux เป็น 12 SP5 เป็นสิ่งจำเป็นก่อนอัปเกรด NAM ไป v5.x เพื่อให้ระบบเข้ากันได้ดีและทำงานได้ราบรื่น", details: ["เป็นข้อกำหนดสำคัญ (Prerequisite) สำหรับ NAM v5.x", "ป้องกันปัญหาทางเทคนิคและความเข้ากันได้ของระบบ"], version: "SUSE Linux 12 SP5", startDate: "2025-06-30", endDate: "2025-06-30", status: "Not Started", assignee: "Busisoft", order: 3 },
-        { id: "step-4", title: "อัปเกรด NAM เป็น v5.0.3", description: "อัปเกรด NAM ในระบบแยกเป็น v5.0.3 ซึ่งมาพร้อมคุณสมบัติใหม่และการแก้ไขช่องโหว่ที่สำคัญ", details: ["รองรับ Kerberos Privileged Attribute Certificate (PAC)", "แก้ไขช่องโหว่ร้ายแรง Log4j และ Multiple XSS (CVE-2022-26325)", "อัปเดต Tomcat 9.0.65, Apache 2.4.54"], version: "v5.0.3", startDate: "2025-07-01", endDate: "2025-07-10", status: "Not Started", assignee: "Busisoft", order: 4 },
-        { id: "step-5", title: "อัปเกรด NAM เป็น v5.1", description: "อัปเกรดสู่เวอร์ชันเป้าหมาย v5.1 ที่มีการปรับปรุงครั้งใหญ่ด้านการจัดการและความปลอดภัย", details: ["หน้าจอจัดการใหม่ (Enhanced Administration Console) บน Angular UI", "ปรับปรุง REST APIs สำหรับการทำงานอัตโนมัติ", "แก้ไขช่องโหว่ Directory traversal, User impersonation และ Multiple XSS"], version: "v5.1", startDate: "2025-07-11", endDate: "2025-07-20", status: "Not Started", assignee: "Busisoft", order: 5 },
-        { id: "step-6", title: "ตรวจสอบและทดสอบระบบ", description: "ตรวจสอบและทดสอบระบบ NAM ที่อัปเกรดแล้วอย่างละเอียดในระบบแยก เพื่อให้แน่ใจว่าทุกอย่างทำงานถูกต้องและเสถียร ก่อนที่จะนำไปใช้งานจริง", version: "v5.1", startDate: "2025-07-21", endDate: "2025-07-27", status: "Not Started", assignee: "Busisoft", order: 6 }
+        { id: "step-aa", title: "ติดตั้งและปรับแต่ง NetIQ (AA)", description: "ดำเนินการติดตั้งและปรับแต่ง NetIQ Advanced Authentication เพื่อรองรับการยืนยันตัวตนแบบ MFA และ Adaptive Authentication", version: "AA", startDate: "2025-05-01", endDate: "2025-05-20", status: "Completed", assignee: "THP", order: 0 }, // New AA task
+        { id: "step-1", title: "Clone ระบบ NAM ทั้งหมด", description: "สร้างสำเนาของระบบ NAM ปัจจุบัน (v4.5.3) ไปยังสภาพแวดล้อมทดสอบที่แยกออกมา เพื่อให้เราอัปเกรดและทดสอบได้อย่างปลอดภัย ไม่กระทบการทำงานปกติ", version: "v4.5.3", startDate: "2025-06-10", endDate: "2025-06-10", status: "In Progress", assignee: "THP", order: 1 },
+        { id: "step-2", title: "อัปเกรด NAM เป็น v4.5.5", description: "อัปเกรด NAM ในระบบแยกเป็น v4.5.5 เพื่อปรับปรุงส่วนประกอบพื้นฐานและแก้ไขปัญหาด้านความปลอดภัยบางประการ", details: ["อัปเดต Tomcat 8.5.72, OpenSSL 1.0.2za, Apache 2.4.51", "แก้ไขปัญหาความปลอดภัยเกี่ยวกับอักขระพิเศษและ SAML"], version: "v4.5.5", startDate: "2025-06-11", endDate: "2025-06-20", status: "Not Started", assignee: "THP", order: 2 },
+        { id: "step-3", title: "อัปเกรด SUSE Linux เป็น 12 SP5", description: "การอัปเกรดระบบปฏิบัติการ SUSE Linux เป็น 12 SP5 เป็นสิ่งจำเป็นก่อนอัปเกรด NAM ไป v5.x เพื่อให้ระบบเข้ากันได้ดีและทำงานได้ราบรื่น", details: ["เป็นข้อกำหนดสำคัญ (Prerequisite) สำหรับ NAM v5.x", "ป้องกันปัญหาทางเทคนิคและความเข้ากันได้ของระบบ"], version: "SUSE Linux 12 SP5", startDate: "2025-06-21", endDate: "2025-06-30", status: "Not Started", assignee: "THP", order: 3 },
+        { id: "step-4", title: "อัปเกรด NAM เป็น v5.0.3", description: "อัปเกรด NAM ในระบบแยกเป็น v5.0.3 ซึ่งมาพร้อมคุณสมบัติใหม่และการแก้ไขช่องโหว่ที่สำคัญ", details: ["รองรับ Kerberos Privileged Attribute Certificate (PAC)", "แก้ไขช่องโหว่ร้ายแรง Log4j และ Multiple XSS (CVE-2022-26325)", "อัปเดต Tomcat 9.0.65, Apache 2.4.54"], version: "v5.0.3", startDate: "2025-07-01", endDate: "2025-07-10", status: "Not Started", assignee: "THP", order: 4 },
+        { id: "step-5", title: "อัปเกรด NAM เป็น v5.1", description: "อัปเกรดสู่เวอร์ชันเป้าหมาย v5.1 ที่มีการปรับปรุงครั้งใหญ่ด้านการจัดการและความปลอดภัย", details: ["หน้าจอจัดการใหม่ (Enhanced Administration Console) บน Angular UI", "ปรับปรุง REST APIs สำหรับการทำงานอัตโนมัติ", "แก้ไขช่องโหว่ Directory traversal, User impersonation และ Multiple XSS"], version: "v5.1", startDate: "2025-07-11", endDate: "2025-07-20", status: "Not Started", assignee: "THP", order: 5 },
+        { id: "step-6", title: "ตรวจสอบและทดสอบระบบ", description: "ตรวจสอบและทดสอบระบบ NAM ที่อัปเกรดแล้วอย่างละเอียดในระบบแยก เพื่อให้แน่ใจว่าทุกอย่างทำงานถูกต้องและเสถียร ก่อนที่จะนำไปใช้งานจริง", version: "v5.1", startDate: "2025-07-21", endDate: "2025-07-27", status: "Not Started", assignee: "THP", order: 6 }
     ];
 
     const improvementsChartData = {
@@ -385,50 +411,59 @@
             name: "NetIQ Advanced Authentication (AA)",
             summary: "NetIQ Advanced Authentication (AA) ได้รับการติดตั้งและปรับแต่งเพื่อเพิ่มความสามารถในการยืนยันตัวตนขั้นสูง",
             details: [
-                "รองรับ Multi-Factor Authentication (MFA) หลากหลายรูปแบบ",
-                "เพิ่ม Adaptive Authentication เพื่อปรับระดับความปลอดภัยตามบริบทการเข้าถึง",
-                "ปรับปรุงประสบการณ์การเข้าสู่ระบบที่ปลอดภัยและยืดหยุ่น"
+                "รองรับ Multi-Factor Authentication (MFA) หลากหลายรูปแบบ เช่น รหัสผ่านครั้งเดียว (OTP), Biometrics (ลายนิ้วมือ, ใบหน้า), Push Notifications",
+                "เพิ่ม Adaptive Authentication Policy: สามารถกำหนดนโยบายความปลอดภัยที่ปรับเปลี่ยนได้ตามบริบทการเข้าถึง (เช่น ตำแหน่งที่ตั้ง, อุปกรณ์ที่ใช้, พฤติกรรมการเข้าสู่ระบบ) เพื่อเพิ่มความปลอดภัยโดยไม่กระทบประสบการณ์ผู้ใช้มากเกินไป",
+                "ลดความเสี่ยงจากการเข้าถึงโดยไม่ได้รับอนุญาต: ด้วยการยืนยันตัวตนที่แข็งแกร่งขึ้น ช่วยป้องกันการโจมตีแบบ Phishing, Credential Stuffing และ Brute-force Attacks",
+                "ปรับปรุงประสบการณ์ผู้ใช้: ด้วยการรวมวิธีการยืนยันตัวตนที่หลากหลายและยืดหยุ่น ทำให้ผู้ใช้สามารถเข้าถึงระบบได้อย่างปลอดภัยและสะดวกสบายยิ่งขึ้น",
+                "รองรับมาตรฐานความปลอดภัยล่าสุด: ช่วยให้องค์กรปฏิบัติตามข้อกำหนดด้าน Regulatory Compliance และมาตรฐานความปลอดภัยข้อมูลที่เข้มงวดขึ้น"
             ]
         },
         {
             id: "v4.5.3",
-            name: "NetIQ Access Manager 4.5.3",
-            summary: "เวอร์ชันปัจจุบันของ NAM ที่กำลังใช้งานอยู่",
+            name: "NetIQ Access Manager 4.5.3 (เวอร์ชันปัจจุบัน)",
+            summary: "เวอร์ชันปัจจุบันของ NAM ที่กำลังใช้งานอยู่และกำลังจะได้รับการอัปเกรด",
             details: [
-                "ทำงานบนระบบปฏิบัติการ SUSE Linux 12 SP4",
-                "อาจมีช่องโหว่ความปลอดภัยที่ยังไม่ถูกแก้ไข (EOL approaching for components)",
-                "คุณสมบัติและส่วนประกอบพื้นฐานเริ่มล้าสมัย"
+                "ระบบปฏิบัติการ: ทำงานบน SUSE Linux Enterprise Server 12 SP4 ซึ่งใกล้จะหมดอายุการสนับสนุน (End-of-Life) ทำให้มีความเสี่ยงด้านความปลอดภัยและขาดการอัปเดตแพตช์",
+                "ส่วนประกอบพื้นฐาน: Apache HTTP Server (เวอร์ชันเก่า), Tomcat Application Server (เวอร์ชันเก่า), OpenSSL (เวอร์ชันเก่า) ซึ่งอาจมีช่องโหว่ที่ทราบแล้วแต่ยังไม่ได้รับการแก้ไข",
+                "ช่องโหว่ความปลอดภัย: อาจมีช่องโหว่ด้านความปลอดภัยที่ยังไม่ถูกแก้ไข (Known Vulnerabilities) ที่อาจถูกโจมตีได้ เช่น Cross-Site Scripting (XSS), SQL Injection, หรือการรั่วไหลของข้อมูล",
+                "คุณสมบัติ: ขาดคุณสมบัติใหม่ๆ ที่มีในเวอร์ชันที่สูงกว่า เช่น การจัดการคอนโซลที่ทันสมัย, REST APIs ที่มีประสิทธิภาพ และการรองรับโปรโตคอลการยืนยันตัวตนใหม่ๆ",
+                "ความซับซ้อนในการจัดการ: การจัดการระบบยังคงใช้หน้าจอแบบเดิมซึ่งอาจไม่เป็นมิตรกับผู้ใช้งานเท่าที่ควร"
             ]
         },
         {
             id: "v4.5.5",
-            name: "NetIQ Access Manager 4.5.5 (Patch)",
-            summary: "การอัปเกรดแพตช์แรกเพื่อปรับปรุงพื้นฐานและแก้ไขช่องโหว่เร่งด่วน",
+            name: "NetIQ Access Manager 4.5.5 (Patch Update)",
+            summary: "การอัปเกรดแพตช์สำหรับ NAM 4.5.x เพื่อปรับปรุงพื้นฐานและแก้ไขช่องโหว่เร่งด่วน",
             details: [
-                "อัปเดต Tomcat 8.5.72, OpenSSL 1.0.2za, Apache 2.4.51",
-                "แก้ไขปัญหาความปลอดภัยเกี่ยวกับอักขระพิเศษ (Special Character Handling)",
-                "แก้ไขปัญหา SAML (Security Assertion Markup Language)"
+                "อัปเดตส่วนประกอบ: อัปเดต Tomcat เป็นเวอร์ชัน 8.5.72, OpenSSL เป็นเวอร์ชัน 1.0.2za, และ Apache HTTP Server เป็นเวอร์ชัน 2.4.51 เพื่อแก้ไขช่องโหว่ที่พบในเวอร์ชันเก่า",
+                "แก้ไขปัญหาความปลอดภัย: ปรับปรุงการจัดการอักขระพิเศษ (Special Character Handling) เพื่อป้องกันการโจมตีแบบ Injection ที่เกิดจากการป้อนข้อมูลที่ไม่ถูกต้อง",
+                "แก้ไขช่องโหว่ SAML: แก้ไขปัญหาที่เกี่ยวข้องกับ Security Assertion Markup Language (SAML) ซึ่งอาจถูกใช้ในการยืนยันตัวตนที่ผิดพลาดหรือการปลอมแปลงข้อมูล (CVEs specific to SAML vulnerabilities if applicable)",
+                "ปรับปรุงความเสถียร: เพิ่มความเสถียรและประสิทธิภาพโดยรวมของระบบด้วยการแก้ไขข้อผิดพลาดเล็กๆ น้อยๆ และปรับปรุงประสิทธิภาพการทำงานของ Core Components"
             ]
         },
         {
             id: "v5.0.3",
-            name: "NetIQ Access Manager 5.0.3",
-            summary: "การอัปเกรดเวอร์ชันหลักที่มาพร้อมคุณสมบัติใหม่และการแก้ไขช่องโหว่ร้ายแรง",
+            name: "NetIQ Access Manager 5.0.3 (Major Update)",
+            summary: "การอัปเกรดเวอร์ชันหลักที่มาพร้อมคุณสมบัติใหม่และการแก้ไขช่องโหว่ที่สำคัญ",
             details: [
-                "รองรับ Kerberos Privileged Attribute Certificate (PAC)",
-                "แก้ไขช่องโหว่ร้ายแรง Log4j (CVE-2021-44228)",
-                "แก้ไขช่องโหว่ Multiple XSS (CVE-2022-26325)",
-                "อัปเดต Tomcat 9.0.65, Apache 2.4.54"
+                "รองรับ Kerberos Privileged Attribute Certificate (PAC): เพิ่มความสามารถในการจัดการ Kerberos PAC ซึ่งช่วยให้การยืนยันตัวตนและการจัดการสิทธิ์ในสภาพแวดล้อม Active Directory มีประสิทธิภาพและปลอดภัยยิ่งขึ้น",
+                "แก้ไขช่องโหว่ Log4j: ปิดช่องโหว่ Apache Log4j ที่ร้ายแรง (CVE-2021-44228, CVE-2021-45046) ซึ่งเป็นช่องโหว่ Zero-day ที่ส่งผลกระทบต่อแอปพลิเคชัน Java จำนวนมากและสามารถนำไปสู่การควบคุมระบบจากระยะไกลได้",
+                "แก้ไขช่องโหว่ Multiple XSS: แก้ไขช่องโหว่ Cross-Site Scripting (XSS) หลายจุด (เช่น CVE-2022-26325) ที่อาจถูกใช้ในการโจมตีผู้ใช้งานโดยการฝัง Script ที่เป็นอันตรายลงในหน้าเว็บ",
+                "อัปเดตส่วนประกอบ: อัปเดต Tomcat เป็นเวอร์ชัน 9.0.65, Apache เป็นเวอร์ชัน 2.4.54 เพื่อเพิ่มประสิทธิภาพและความปลอดภัยของแพลตฟอร์ม",
+                "ปรับปรุงประสิทธิภาพ: มีการปรับปรุงภายในเพื่อเพิ่มประสิทธิภาพการทำงานและลด Latency ในการประมวลผลคำขอ"
             ]
         },
         {
             id: "v5.1",
             name: "NetIQ Access Manager 5.1 (Target Version)",
-            summary: "เวอร์ชันเป้าหมายที่มีการปรับปรุงครั้งใหญ่ด้านการจัดการ ความปลอดภัย และ REST APIs",
+            summary: "เวอร์ชันเป้าหมายที่มีการปรับปรุงครั้งใหญ่ด้านการจัดการ ความปลอดภัย และ REST APIs เพื่อรองรับอนาคต",
             details: [
-                "หน้าจอจัดการใหม่ (Enhanced Administration Console) บน Angular UI",
-                "ปรับปรุง REST APIs สำหรับการทำงานอัตโนมัติ (Automation) และการเชื่อมต่อ",
-                "แก้ไขช่องโหว่ Directory traversal, User impersonation, และ Multiple XSS เพิ่มเติม"
+                "Enhanced Administration Console (Angular UI): ผู้ดูแลระบบจะได้รับหน้าจอการจัดการใหม่ที่ทันสมัย ใช้งานง่ายขึ้น พัฒนาด้วย Angular UI ซึ่งช่วยเพิ่มประสิทธิภาพในการตั้งค่า, ตรวจสอบ, และแก้ไขปัญหาต่างๆ",
+                "ปรับปรุง REST APIs สำหรับ Automation: RESTful APIs ได้รับการปรับปรุงและขยายขีดความสามารถ ทำให้สามารถทำงานร่วมกับระบบอื่นๆ ได้อย่างราบรื่นยิ่งขึ้น และรองรับการทำงานแบบอัตโนมัติ (Automation) สำหรับงานด้านการจัดการผู้ใช้, แอปพลิเคชัน, และนโยบายต่างๆ",
+                "แก้ไขช่องโหว่ความปลอดภัยเพิ่มเติม: แก้ไขช่องโหว่สำคัญ เช่น Directory Traversal (การเข้าถึงไฟล์นอกเหนือจากที่กำหนด), User Impersonation (การปลอมแปลงเป็นผู้ใช้รายอื่น), และ XSS (Cross-Site Scripting) เพิ่มเติม เพื่อเสริมความแข็งแกร่งของระบบ",
+                "ความสามารถในการบูรณาการที่ดีขึ้น: ช่วยให้สามารถบูรณาการกับระบบ Cloud, Mobile Applications, และ Identity Providers ภายนอกได้อย่างง่ายดาย",
+                "รองรับมาตรฐาน OpenID Connect/OAuth 2.0: ยืนยันการรองรับมาตรฐานการยืนยันตัวตนและการอนุญาตล่าสุดเพื่อความเข้ากันได้กับแอปพลิเคชันยุคใหม่",
+                "ลด Downtime ในการอัปเกรด: มีการปรับปรุงกระบวนการอัปเกรดให้มีความราบรื่นมากขึ้น ลดเวลาที่ระบบจะต้องหยุดทำงาน"
             ]
         }
     ];
@@ -487,11 +522,11 @@
 
             row.innerHTML = `
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${index + 1}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td class="px-6 py-4 text-sm text-gray-900">
                     <div class="font-semibold">${step.title}</div>
-                    <div class="text-xs text-gray-500">${step.description}</div>
+                    <div class="text-xs text-gray-500 font-normal">${step.description}</div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${step.assignee || 'N/A'}</td>
+                <td class="px-6 py-4 text-sm text-gray-500">${step.assignee || 'N/A'}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <input type="date" value="${step.startDate || ''}" 
                            class="border rounded px-2 py-1 text-sm w-36"
@@ -504,7 +539,7 @@
                            onchange="window.updateTaskDataAndRenderUI('${step.id}', 'endDate', this.value)"
                            ${step.id === 'step-aa' ? 'disabled' : ''}>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm ${statusColorClass}">
+                <td class="px-6 py-4 text-sm ${statusColorClass}">
                     <select class="border rounded px-2 py-1 text-sm ${statusColorClass}"
                             onchange="window.updateTaskDataAndRenderUI('${step.id}', 'status', this.value)"
                             ${step.id === 'step-aa' ? 'disabled' : ''}>
@@ -551,7 +586,7 @@
         projectEndDate.setDate(projectEndDate.getDate() + 14);
 
         const totalProjectDurationMs = projectEndDate.getTime() - projectStartDate.getTime();
-        const timelineChartAreaWidthPx = 800; // Reverted to smaller width for main chart area
+        const timelineChartAreaWidthPx = 800; // Fixed width for main chart area
 
         // Render Axis (monthly labels)
         let currentMonth = new Date(projectStartDate.getFullYear(), projectStartDate.getMonth(), 1);
@@ -609,7 +644,7 @@
             timelineTracks.appendChild(track); // Add the track to the container
         });
         // Adjust overall timelineTracks width for horizontal scrolling if needed (total width of labels + chart area)
-        timelineTracks.style.width = `calc(250px + ${timelineChartAreaWidthPx}px)`; // 250px for label area + chart area width
+        timelineTracks.style.width = `calc(450px + ${timelineChartAreaWidthPx}px)`; // 450px for label area + chart area width
 
     }
     window.renderProjectTimeline = renderProjectTimeline; // Expose to window
@@ -678,29 +713,29 @@
         switch (category) {
             case 'ความปลอดภัย':
                 content += `
-                    <li>แก้ไขช่องโหว่ความปลอดภัยที่พบในเวอร์ชันก่อนหน้า (เช่น Log4j, XSS)</li>
-                    <li>รองรับการยืนยันตัวตนแบบ Multi-Factor Authentication (MFA) ด้วย NetIQ AA</li>
-                    <li>เพิ่มความสามารถในการตรวจสอบและควบคุมการเข้าถึงที่ละเอียดอ่อนยิ่งขึ้น</li>
-                    <li>อัปเดตส่วนประกอบพื้นฐาน (Tomcat, OpenSSL, Apache) ให้เป็นเวอร์ชันที่ปลอดภัย</li>
+                    <li><span class="font-normal">แก้ไขช่องโหว่ความปลอดภัยที่พบในเวอร์ชันก่อนหน้า (เช่น Log4j, XSS)</span></li>
+                    <li><span class="font-normal">รองรับการยืนยันตัวตนแบบ Multi-Factor Authentication (MFA) ด้วย NetIQ AA</span></li>
+                    <li><span class="font-normal">เพิ่มความสามารถในการตรวจสอบและควบคุมการเข้าถึงที่ละเอียดอ่อนยิ่งขึ้น</span></li>
+                    <li><span class="font-normal">อัปเดตส่วนประกอบพื้นฐาน (Tomcat, OpenSSL, Apache) ให้เป็นเวอร์ชันที่ปลอดภัย</span></li>
                 `;
                 break;
             case 'ประสิทธิภาพ':
                 content += `
-                    <li>ปรับปรุงความเร็วในการประมวลผลและการตอบสนองของระบบ</li>
-                    <li>ลดภาระงานของ Server ด้วยการจัดการทรัพยากรที่ดีขึ้น</li>
-                    <li>เพิ่มความเสถียรและความน่าเชื่อถือในการทำงานต่อเนื่อง</li>
+                    <li><span class="font-normal">ปรับปรุงความเร็วในการประมวลผลและการตอบสนองของระบบ</span></li>
+                    <li><span class="font-normal">ลดภาระงานของ Server ด้วยการจัดการทรัพยากรที่ดีขึ้น</span></li>
+                    <li><span class="font-normal">เพิ่มความเสถียรและความน่าเชื่อถือในการทำงานต่อเนื่อง</span></li>
                 `;
                 break;
             case 'คุณสมบัติใหม่':
                 content += `
-                    <li>หน้าจอจัดการผู้ดูแลระบบ (Administration Console) ที่ทันสมัยขึ้นบน Angular UI</li>
-                    <li>ปรับปรุงและเพิ่มประสิทธิภาพ REST APIs สำหรับการทำงานอัตโนมัติ</li>
-                    <li>รองรับ Kerberos Privileged Attribute Certificate (PAC)</li>
-                    <li>บูรณาการกับ NetIQ Advanced Authentication (AA) ได้อย่างสมบูรณ์แบบ</li>
+                    <li><span class="font-normal">หน้าจอจัดการผู้ดูแลระบบ (Administration Console) ที่ทันสมัยขึ้นบน Angular UI</span></li>
+                    <li><span class="font-normal">ปรับปรุงและเพิ่มประสิทธิภาพ REST APIs สำหรับการทำงานอัตโนมัติ</span></li>
+                    <li><span class="font-normal">รองรับ Kerberos Privileged Attribute Certificate (PAC)</span></li>
+                    <li><span class="font-normal">บูรณาการกับ NetIQ Advanced Authentication (AA) ได้อย่างสมบูรณ์แบบ</span></li>
                 `;
                 break;
             default:
-                content += `<li>ไม่พบรายละเอียดสำหรับหมวดหมู่นี้</li>`;
+                content += `<li><span class="font-normal">ไม่พบรายละเอียดสำหรับหมวดหมู่นี้</span></li>`;
         }
         content += `</ul>`;
         container.innerHTML = content;
@@ -718,7 +753,7 @@
                  data-version-id="${version.id}"
                  onclick="window.displayVersionDetails('${version.id}', this)">
                 <h3 class="text-lg font-semibold text-gray-800 mb-1">${version.name}</h3>
-                <p class="text-sm text-gray-600">${version.summary}</p>
+                <p class="text-sm text-gray-600 font-normal">${version.summary}</p>
             </div>
         `).join('');
     }
@@ -747,17 +782,17 @@
         if (selectedVersion) {
             let content = `
                 <h3 class="font-bold text-xl mb-4 text-primary-blue">${selectedVersion.name}</h3>
-                <p class="text-gray-700 mb-4">${selectedVersion.summary}</p>
+                <p class="text-gray-700 mb-4 font-normal">${selectedVersion.summary}</p>
                 <h4 class="font-semibold text-lg text-gray-800 mb-2">รายละเอียด:</h4>
                 <ul class="list-disc list-inside text-gray-700 space-y-2">
             `;
             selectedVersion.details.forEach(detail => {
-                content += `<li>${detail}</li>`;
+                content += `<li><span class="font-normal">${detail}</span></li>`;
             });
             content += `</ul>`;
             displayArea.innerHTML = content;
         } else {
-            displayArea.innerHTML = `<p class="text-red-500 text-center">ไม่พบรายละเอียดสำหรับเวอร์ชันนี้</p>`;
+            displayArea.innerHTML = `<p class="text-red-500 text-center font-normal">ไม่พบรายละเอียดสำหรับเวอร์ชันนี้</p>`;
         }
     }
     window.displayVersionDetails = displayVersionDetails; // Expose to window
