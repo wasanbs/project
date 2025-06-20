@@ -85,7 +85,8 @@
             margin-bottom: 10px;
             font-size: 0.875rem; /* text-sm */
             color: #6b7280; /* gray-500 */
-            padding: 0 10px; /* Padding to match timeline bars */
+            padding-left: 210px; /* Space for labels */
+            padding-right: 10px;
         }
         .timeline-track {
             display: flex;
@@ -94,12 +95,30 @@
             margin-bottom: 10px;
             background-color: #f3f4f6; /* gray-100 */
             border-radius: 5px;
-            position: relative; /* For absolute positioning of bars */
+            position: relative;
+        }
+        .timeline-label-area {
+            flex-shrink: 0;
+            width: 200px; /* Fixed width for the label area */
+            padding-left: 10px; /* Padding from the left edge of the track */
+            padding-right: 10px; /* Padding between label and bar area */
+            text-align: right; /* Align text to the right for clarity */
+            font-size: 0.875rem; /* text-sm */
+            color: #3f3f46; /* text-gray-800 */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            box-sizing: border-box;
+        }
+        .timeline-chart-area {
+            flex-grow: 1;
+            position: relative; /* Container for absolute positioned bars */
+            height: 100%; /* Take full height of track */
         }
         .timeline-bar {
             height: 30px;
             border-radius: 3px;
-            position: absolute;
+            position: absolute; /* Positioned within timeline-chart-area */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -107,6 +126,7 @@
             color: white;
             padding: 0 5px;
             box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            z-index: 5;
         }
         .timeline-bar.status-NotStarted { background-color: #9ca3af; /* gray-400 */ }
         .timeline-bar.status-InProgress { background-color: #2196F3; /* medium-blue */ }
@@ -198,7 +218,9 @@
                 </div>
             </div>
 
-      
+            <p class="text-center max-w-2xl mx-auto mt-8 text-gray-600 font-semibold">
+                *ข้อมูลความคืบหน้าจะถูกอัปเดตบนหน้าเว็บแบบเรียลไทม์เท่านั้น และจะไม่ถูกบันทึกถาวรเมื่อปิดหน้าเว็บ หากต้องการบันทึก/โหลดข้อมูลแผนงาน กรุณาใช้ "เครื่องมือจัดการข้อมูล JSON" แยกต่างหาก โดยการคัดลอกข้อมูล JSON ระหว่างสองแอปพลิเคชันด้วยตนเอง.
+            </p>
         </section>
         
         <!-- Improvements Chart Section -->
@@ -263,7 +285,8 @@
     // --- Static Data Definitions (All data is now hardcoded) ---
     // Make upgradeSteps a global variable or accessible via window for updateTaskDataAndRenderUI and file operations
     window.upgradeSteps = [ // This array will be updated locally, but not persistently saved
-        { id: "step-1", title: "Clone ระบบ NAM ทั้งหมด", description: "สร้างสำเนาของระบบ NAM ปัจจุบัน (v4.5.3) ไปยังสภาพแวดล้อมทดสอบที่แยกออกมา เพื่อให้เราอัปเกรดและทดสอบได้อย่างปลอดภัย ไม่กระทบการทำงานปกติ", version: "v4.5.3", startDate: "2025-06-01", endDate: "2025-06-10", status: "In Progress", assignee: "THP", order: 1 },
+        { id: "step-aa", title: "ติดตั้งและปรับแต่ง NetIQ (AA)", description: "ดำเนินการติดตั้งและปรับแต่ง NetIQ Advanced Authentication เพื่อรองรับการยืนยันตัวตนแบบ MFA และ Adaptive Authentication", version: "AA", startDate: "2025-05-01", endDate: "2025-05-20", status: "Completed", assignee: "THP", order: 0 }, // New AA task
+        { id: "step-1", title: "Clone ระบบ NAM ทั้งหมด", description: "สร้างสำเนาของระบบ NAM ปัจจุบัน (v4.5.3) ไปยังสภาพแวดล้อมทดสอบที่แยกออกมา เพื่อให้เราอัปเกรดและทดสอบได้อย่างปลอดภัย ไม่กระทบการทำงานปกติ", version: "v4.5.3", startDate: "2025-06-10", endDate: "2025-06-10", status: "In Progress", assignee: "THP", order: 1 },
         { id: "step-2", title: "อัปเกรด NAM เป็น v4.5.5", description: "อัปเกรด NAM ในระบบแยกเป็น v4.5.5 เพื่อปรับปรุงส่วนประกอบพื้นฐานและแก้ไขปัญหาด้านความปลอดภัยบางประการ", details: ["อัปเดต Tomcat 8.5.72, OpenSSL 1.0.2za, Apache 2.4.51", "แก้ไขปัญหาความปลอดภัยเกี่ยวกับอักขระพิเศษและ SAML"], version: "v4.5.5", startDate: "2025-06-11", endDate: "2025-06-20", status: "Not Started", assignee: "THP", order: 2 },
         { id: "step-3", title: "อัปเกรด SUSE Linux เป็น 12 SP5", description: "การอัปเกรดระบบปฏิบัติการ SUSE Linux เป็น 12 SP5 เป็นสิ่งจำเป็นก่อนอัปเกรด NAM ไป v5.x เพื่อให้ระบบเข้ากันได้ดีและทำงานได้ราบรื่น", details: ["เป็นข้อกำหนดสำคัญ (Prerequisite) สำหรับ NAM v5.x", "ป้องกันปัญหาทางเทคนิคและความเข้ากันได้ของระบบ"], version: "SUSE Linux 12 SP5", startDate: "2025-06-21", endDate: "2025-06-30", status: "Not Started", assignee: "THP", order: 3 },
         { id: "step-4", title: "อัปเกรด NAM เป็น v5.0.3", description: "อัปเกรด NAM ในระบบแยกเป็น v5.0.3 ซึ่งมาพร้อมคุณสมบัติใหม่และการแก้ไขช่องโหว่ที่สำคัญ", details: ["รองรับ Kerberos Privileged Attribute Certificate (PAC)", "แก้ไขช่องโหว่ร้ายแรง Log4j และ Multiple XSS (CVE-2022-26325)", "อัปเดต Tomcat 9.0.65, Apache 2.4.54"], version: "v5.0.3", startDate: "2025-07-01", endDate: "2025-07-10", status: "Not Started", assignee: "THP", order: 4 },
@@ -304,7 +327,7 @@
             description: 'Single Sign-On (SSO) ที่มีประสิทธิภาพช่วยให้ผู้ใช้เข้าถึงแอปพลิเคชันต่างๆ ได้อย่างราบรื่นและสะดวกสบาย'
         },
         {
-            icon: '🌍',
+            icon: '�',
             title: 'รองรับการทำงานยุคใหม่',
             description: 'การเพิ่ม AA ช่วยให้รองรับการทำงานนอกสถานที่ (Mobile Workforce) และการ Login แบบ Offline ได้อย่างปลอดภัย'
         },
@@ -356,6 +379,8 @@
             window.upgradeSteps[taskIndex].lastUpdatedBy = "Local User";
             window.upgradeSteps[taskIndex].lastUpdated = new Date().toISOString();
         }
+        // Sort steps by order to ensure AA is always first
+        window.upgradeSteps.sort((a, b) => a.order - b.order);
         renderProgressTable();
         renderProjectTimeline();
     };
@@ -369,7 +394,10 @@
         
         tableBody.innerHTML = ''; // Clear existing rows
 
-        window.upgradeSteps.forEach((step, index) => {
+        // Sort steps by order before rendering
+        const sortedSteps = [...window.upgradeSteps].sort((a, b) => a.order - b.order);
+
+        sortedSteps.forEach((step, index) => {
             const row = document.createElement('tr');
             row.classList.add('hover:bg-gray-50');
 
@@ -397,16 +425,19 @@
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <input type="date" value="${step.startDate || ''}" 
                            class="border rounded px-2 py-1 text-sm w-36"
-                           onchange="window.updateTaskDataAndRenderUI('${step.id}', 'startDate', this.value)">
+                           onchange="window.updateTaskDataAndRenderUI('${step.id}', 'startDate', this.value)"
+                           ${step.id === 'step-aa' ? 'disabled' : ''}>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <input type="date" value="${step.endDate || ''}" 
                            class="border rounded px-2 py-1 text-sm w-36"
-                           onchange="window.updateTaskDataAndRenderUI('${step.id}', 'endDate', this.value)">
+                           onchange="window.updateTaskDataAndRenderUI('${step.id}', 'endDate', this.value)"
+                           ${step.id === 'step-aa' ? 'disabled' : ''}>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm ${statusColorClass}">
                     <select class="border rounded px-2 py-1 text-sm ${statusColorClass}"
-                            onchange="window.updateTaskDataAndRenderUI('${step.id}', 'status', this.value)">
+                            onchange="window.updateTaskDataAndRenderUI('${step.id}', 'status', this.value)"
+                            ${step.id === 'step-aa' ? 'disabled' : ''}>
                         <option value="Not Started" ${step.status === 'Not Started' ? 'selected' : ''}>Not Started</option>
                         <option value="In Progress" ${step.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
                         <option value="Completed" ${step.status === 'Completed' ? 'selected' : ''}>Completed</option>
@@ -435,16 +466,22 @@
 
         if (window.upgradeSteps.length === 0) return;
 
-        // Calculate project start and end dates
-        let projectStartDate = new Date(Math.min(...window.upgradeSteps.map(s => new Date(s.startDate))));
-        let projectEndDate = new Date(Math.max(...window.upgradeSteps.map(s => new Date(s.endDate))));
+        // Sort steps by order to ensure AA is always first
+        const sortedSteps = [...window.upgradeSteps].sort((a, b) => a.order - b.order);
 
-        // Add some buffer to the timeline start/end for better visualization
-        projectStartDate.setDate(projectStartDate.getDate() - 7); // 7 days before first task
-        projectEndDate.setDate(projectEndDate.getDate() + 14); // 14 days after last task
+        // Determine overall project start date (April 1st, 2025)
+        let projectStartDate = new Date(2025, 3, 1); // April 1st, 2025 (Month is 0-indexed)
+
+        // Calculate project end date based on the latest task, ensuring it extends to at least August 2025
+        let latestTaskEndDate = new Date(Math.max(...sortedSteps.map(s => new Date(s.endDate))));
+        let minProjectEndDate = new Date(2025, 7, 31); // August 31st, 2025
+        let projectEndDate = new Date(Math.max(latestTaskEndDate.getTime(), minProjectEndDate.getTime()));
+
+        // Add some buffer to the final projectEndDate for better visualization at the end
+        projectEndDate.setDate(projectEndDate.getDate() + 14);
 
         const totalProjectDurationMs = projectEndDate.getTime() - projectStartDate.getTime();
-        const timelineWidthPx = 1200; // Fixed width for timeline content to allow horizontal scroll
+        const timelineChartAreaWidthPx = 1000; // Fixed width for the chart area within the timeline
 
         // Render Axis (monthly labels)
         let currentMonth = new Date(projectStartDate.getFullYear(), projectStartDate.getMonth(), 1);
@@ -453,45 +490,57 @@
         while (currentMonth.getTime() <= projectEndDate.getTime()) {
             const nextMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
             const monthDurationMs = nextMonth.getTime() - currentMonth.getTime();
-            axisContent += `<div style="width: ${timelineWidthPx * (monthDurationMs / totalProjectDurationMs)}px; text-align: center; flex-shrink: 0;">${currentMonth.toLocaleString('th-TH', monthFormat)}</div>`;
+            
+            // Calculate width for each month dynamically
+            const monthWidth = Math.max(0, timelineChartAreaWidthPx * (monthDurationMs / totalProjectDurationMs));
+            
+            axisContent += `<div style="width: ${monthWidth}px; text-align: center; flex-shrink: 0;">${currentMonth.toLocaleString('th-TH', monthFormat)}</div>`;
             currentMonth = nextMonth;
         }
         timelineAxis.innerHTML = axisContent;
-        timelineAxis.style.width = `${timelineWidthPx}px`;
+        timelineAxis.style.width = `${timelineChartAreaWidthPx}px`;
 
 
         // Render Task Bars
-        window.upgradeSteps.forEach((step, index) => {
+        sortedSteps.forEach((step, index) => {
             const track = document.createElement('div');
             track.classList.add('timeline-track');
             
-            // Add task title as a label in the track
+            // Task title as a label to the left of the bar area
             const taskLabel = document.createElement('div');
-            taskLabel.classList.add('absolute', 'left-2', 'top-1/2', '-translate-y-1/2', 'text-sm', 'font-medium', 'text-gray-800', 'z-10');
+            taskLabel.classList.add('timeline-label-area'); // Applies specific styling for labels
             taskLabel.textContent = step.title;
             track.appendChild(taskLabel);
+
+            // Container for the bar, takes remaining flexible width
+            const chartArea = document.createElement('div');
+            chartArea.classList.add('timeline-chart-area');
 
             const bar = document.createElement('div');
             const stepStartDate = new Date(step.startDate);
             const stepEndDate = new Date(step.endDate);
 
+            // Calculate position and width relative to the overall project duration
             const offsetMs = stepStartDate.getTime() - projectStartDate.getTime();
             const durationMs = stepEndDate.getTime() - stepStartDate.getTime();
 
-            // Calculate position and width based on total timeline width
-            const leftPositionPx = (offsetMs / totalProjectDurationMs) * timelineWidthPx;
-            const widthPx = (durationMs / totalProjectDurationMs) * timelineWidthPx;
+            // Calculate position and width of the bar within the timelineChartAreaWidthPx
+            const leftPositionPx = (offsetMs / totalProjectDurationMs) * timelineChartAreaWidthPx;
+            const widthPx = (durationMs / totalProjectDurationMs) * timelineChartAreaWidthPx;
 
             bar.classList.add('timeline-bar', `status-${step.status.replace(/\s/g, '')}`);
             bar.style.left = `${leftPositionPx}px`;
             bar.style.width = `${Math.max(widthPx, 20)}px`; // Ensure min width for visibility
-            //bar.textContent = step.title; // Removed from bar, now in track label
+            
             bar.title = `${step.title}\nสถานะ: ${step.status}\nเริ่ม: ${step.startDate}\nสิ้นสุด: ${step.endDate}`; // Tooltip
 
-            track.appendChild(bar);
-            timelineTracks.appendChild(track);
+            chartArea.appendChild(bar); // Add the bar to its chart area container
+            track.appendChild(chartArea); // Add the chart area container to the track
+            timelineTracks.appendChild(track); // Add the track to the container
         });
-        timelineTracks.style.width = `${timelineWidthPx}px`;
+        // Adjust overall timelineTracks width for horizontal scrolling if needed (total width of labels + chart area)
+        timelineTracks.style.width = `calc(200px + ${timelineChartAreaWidthPx}px)`; // 200px for label area + chart area width
+
     }
     window.renderProjectTimeline = renderProjectTimeline; // Expose to window
 
@@ -694,3 +743,4 @@
 </script>
 </body>
 </html>
+�
