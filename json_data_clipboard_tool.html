@@ -3,161 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>เครื่องมือจัดการข้อมูล JSON</title>
+    <title>เครื่องมือจัดการข้อมูล JSON ต้นฉบับ</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Sarabun', sans-serif;
-            background-color: #f8fbff;
-            color: #3f3f46;
-        }
-        .container {
-            max-width: 800px;
-        }
-        textarea {
-            min-height: 300px;
-        }
+        body { font-family: 'Sarabun', sans-serif; }
+        textarea { white-space: pre; overflow-wrap: normal; overflow-x: scroll; }
     </style>
 </head>
-<body class="antialiased flex items-center justify-center min-h-screen p-4">
-    <div class="container bg-white p-8 rounded-xl shadow-lg border border-gray-100">
-        <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">เครื่องมือจัดการข้อมูล JSON</h1>
-        <p class="text-center text-gray-600 mb-8">
-            ใช้เครื่องมือนี้เพื่อดาวน์โหลดหรืออัปโหลดข้อมูล JSON สำหรับแผนงาน NetIQ.
-            <br>
-            <strong class="text-red-500">หมายเหตุ:</strong> ข้อมูลไม่ได้ซิงค์กับแผนงานโดยอัตโนมัติ คุณต้องคัดลอกและวางข้อมูลด้วยตนเอง.
-            <br>
-            <span class="text-sm text-gray-500">
-                (ในการคัดลอกข้อมูลจากหน้าหลัก: เปิด Developer Console (F12) -> Console -> พิมพ์ `copy(window.upgradeSteps)` แล้วกด Enter.
-                <br>
-                ในการวางข้อมูลในหน้าหลัก: เปิด Developer Console (F12) -> Console -> พิมพ์ `window.upgradeSteps = <วางข้อมูล JSON ที่คัดลอกมาที่นี่>; renderProgressTable(); renderProjectTimeline();` แล้วกด Enter)
-            </span>
-        </p>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="w-full max-w-4xl bg-white p-8 rounded-xl shadow-lg border">
+        <h1 class="text-3xl font-bold text-center mb-2 text-gray-800">เครื่องมือจัดการข้อมูล JSON ต้นฉบับ</h1>
+        <p class="text-center text-gray-600 mb-6">ใช้หน้านี้เพื่อแก้ไข, อัปเดต, และคัดลอกข้อมูลต้นฉบับ (Source Code) สำหรับแผนงาน</p>
 
-        <div class="mb-6">
-            <label for="json-input" class="block text-gray-700 text-sm font-bold mb-2">
-                วางข้อมูล JSON ที่นี่ หรืออัปโหลดไฟล์:
-            </label>
-            <textarea id="json-input"
-                      class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-blue-500 transition duration-200 ease-in-out"
-                      placeholder="[{ ... }]"></textarea>
+        <div class="mb-4">
+            <label for="json-input" class="block text-gray-700 text-sm font-bold mb-2">ข้อมูลแผนงาน (JSON):</label>
+            <textarea id="json-input" class="shadow-inner appearance-none border rounded-lg w-full h-96 py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 transition"></textarea>
         </div>
 
-        <div class="flex flex-col sm:flex-row justify-center gap-4 mb-8">
-            <button id="downloadJsonButton"
-                    class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors flex-grow sm:flex-grow-0">
-                ดาวน์โหลด JSON
+        <div class="flex flex-wrap justify-center items-center gap-4 mb-6">
+            <button id="copyButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition">
+                คัดลอกข้อมูล
             </button>
-            <label for="uploadJsonInput"
-                   class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors cursor-pointer flex-grow sm:flex-grow-0 text-center">
-                อัปโหลด JSON
+            <label for="uploadJsonInput" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition cursor-pointer">
+                อัปโหลดไฟล์ JSON
             </label>
             <input type="file" id="uploadJsonInput" accept=".json" class="hidden" />
+             <button id="resetButton" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg shadow-md transition">
+                รีเซ็ตเป็นข้อมูลดั้งเดิม
+            </button>
         </div>
 
-        <div id="message-box" class="text-center text-sm mt-4 p-2 rounded hidden"></div>
+        <div id="message-box" class="text-center text-sm p-3 rounded-lg opacity-0 transition-opacity duration-300"></div>
 
     </div>
 
-    <script type="module">
-        /**
-         * Displays a message to the user.
-         * @param {string} msg - The message to display.
-         * @param {boolean} isError - True if it's an error message, false otherwise.
-         */
-        function showMessage(msg, isError = false) {
-            const msgBox = document.getElementById('message-box');
-            if (msgBox) {
-                msgBox.textContent = msg;
-                msgBox.classList.remove('hidden', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700');
-                if (isError) {
-                    msgBox.classList.add('bg-red-100', 'text-red-700');
-                } else {
-                    msgBox.classList.add('bg-green-100', 'text-green-700');
-                }
-                setTimeout(() => {
-                    msgBox.classList.add('hidden');
-                }, 5000); // Hide after 5 seconds
-            }
+<script type="module">
+    // This is the single source of truth for the initial data.
+    // It's embedded here so the tool can always reset to it.
+    const sourceData = [
+        { "id": "step-aa", "title": "ติดตั้งและปรับแต่ง NetIQ (AA)", "description": "ดำเนินการติดตั้งและปรับแต่ง NetIQ Advanced Authentication", "version": "AA", "startDate": "2025-05-01", "endDate": "2025-05-20", "status": "Completed", "assignee": "Busisoft", "order": 0 },
+        { "id": "step-2-upgrade", "title": "อัปเกรด NAM v4.5.5 (Production)", "description": "ดำเนินการอัปเกรด NAM บนระบบจริงเป็นเวอร์ชัน 4.5.5", "version": "v4.5.5", "startDate": "2025-09-08", "endDate": "2025-09-14", "status": "Not Started", "assignee": "Busisoft", "order": 1 },
+        { "id": "step-2-followup", "title": "ติดตามผล NAM v4.5.5", "description": "ตรวจสอบและติดตามผลการทำงานของระบบเป็นเวลา 1 สัปดาห์", "version": "v4.5.5", "startDate": "2025-09-15", "endDate": "2025-09-21", "status": "Not Started", "assignee": "Busisoft/THP", "order": 2 },
+        { "id": "step-3-upgrade", "title": "อัปเกรด SUSE Linux 12 SP5 (Production)", "description": "ดำเนินการอัปเกรดระบบปฏิบัติการ SUSE Linux บนระบบจริง", "version": "SUSE Linux 12 SP5", "startDate": "2025-09-22", "endDate": "2025-09-28", "status": "Not Started", "assignee": "Busisoft", "order": 3 },
+        { "id": "step-3-followup", "title": "ติดตามผล SUSE Linux 12 SP5", "description": "ตรวจสอบและติดตามผลการทำงานของระบบเป็นเวลา 1 สัปดาห์", "version": "SUSE Linux 12 SP5", "startDate": "2025-09-29", "endDate": "2025-10-05", "status": "Not Started", "assignee": "Busisoft/THP", "order": 4 },
+        { "id": "step-4-upgrade", "title": "อัปเกรด NAM v5.0.3 (Production)", "description": "ดำเนินการอัปเกรด NAM บนระบบจริงเป็นเวอร์ชัน 5.0.3", "version": "v5.0.3", "startDate": "2025-10-06", "endDate": "2025-10-12", "status": "Not Started", "assignee": "Busisoft", "order": 5 },
+        { "id": "step-4-followup", "title": "ติดตามผล NAM v5.0.3", "description": "ตรวจสอบและติดตามผลการทำงานของระบบเป็นเวลา 1 สัปดาห์", "version": "v5.0.3", "startDate": "2025-10-13", "endDate": "2025-10-19", "status": "Not Started", "assignee": "Busisoft/THP", "order": 6 },
+        { "id": "step-5-upgrade", "title": "อัปเกรด NAM v5.1 (Production)", "description": "ดำเนินการอัปเกรด NAM บนระบบจริงเป็นเวอร์ชันเป้าหมาย 5.1", "version": "v5.1", "startDate": "2025-10-20", "endDate": "2025-10-26", "status": "Not Started", "assignee": "Busisoft", "order": 7 },
+        { "id": "step-5-followup", "title": "ติดตามผล NAM v5.1", "description": "ตรวจสอบและติดตามผลการทำงานของระบบเป็นเวลา 1 สัปดาห์", "version": "v5.1", "startDate": "2025-10-27", "endDate": "2025-11-02", "status": "Not Started", "assignee": "Busisoft/THP", "order": 8 },
+        { "id": "step-7-final", "title": "สรุปผลและส่งมอบโครงการ", "description": "รวบรวมข้อมูล สรุปผลการดำเนินงาน และส่งมอบโครงการ", "version": "v5.1", "startDate": "2025-11-03", "endDate": "2025-11-09", "status": "Not Started", "assignee": "Busisoft", "order": 9 }
+    ];
+
+    const jsonInput = document.getElementById('json-input');
+    const copyButton = document.getElementById('copyButton');
+    const uploadInput = document.getElementById('uploadJsonInput');
+    const resetButton = document.getElementById('resetButton');
+    const messageBox = document.getElementById('message-box');
+
+    function showMessage(msg, isError = false) {
+        messageBox.textContent = msg;
+        messageBox.classList.remove('bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700', 'opacity-0');
+        messageBox.classList.add(isError ? 'bg-red-100' : 'bg-green-100', isError ? 'text-red-700' : 'text-green-700');
+        setTimeout(() => messageBox.classList.add('opacity-0'), 3000);
+    }
+    
+    function formatAndSetTextarea(data) {
+        try {
+            jsonInput.value = JSON.stringify(data, null, 2); // Pretty print
+        } catch (e) {
+            showMessage("ข้อมูลไม่ถูกต้อง ไม่สามารถแสดงผลได้", true);
         }
+    }
 
-        /**
-         * Handles downloading the content of the textarea as a JSON file.
-         */
-        function handleDownloadJson() {
-            const textarea = document.getElementById('json-input');
-            const content = textarea.value.trim();
+    // Initialize with source data on load
+    formatAndSetTextarea(sourceData);
 
-            if (!content) {
-                showMessage('ไม่มีข้อมูล JSON ให้ดาวน์โหลด', true);
-                return;
-            }
+    copyButton.addEventListener('click', () => {
+        try {
+            // Re-format to ensure it's valid before copying
+            const currentData = JSON.parse(jsonInput.value);
+            const formattedJson = JSON.stringify(currentData, null, 2);
+            navigator.clipboard.writeText(formattedJson);
+            showMessage('คัดลอกข้อมูล JSON ลงในคลิปบอร์ดแล้ว!');
+        } catch (error) {
+            showMessage('ข้อมูล JSON ไม่ถูกต้อง ไม่สามารถคัดลอกได้', true);
+        }
+    });
 
+    uploadInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
             try {
-                // Validate JSON before downloading
-                JSON.parse(content);
-                const blob = new Blob([content], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'data.json'; // Default filename
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                showMessage('ดาวน์โหลดข้อมูล JSON สำเร็จแล้ว!');
+                const loadedData = JSON.parse(e.target.result);
+                formatAndSetTextarea(loadedData);
+                showMessage('อัปโหลดและแสดงผลข้อมูลจากไฟล์สำเร็จ!');
             } catch (error) {
-                console.error('Error parsing JSON for download:', error);
-                showMessage('ข้อมูลในกล่องข้อความเป็น JSON ที่ไม่ถูกต้อง: ' + error.message, true);
+                showMessage('ไฟล์ JSON ไม่ถูกต้อง: ' + error.message, true);
             }
+        };
+        reader.readAsText(file);
+        event.target.value = ''; // Allow re-uploading same file
+    });
+    
+    resetButton.addEventListener('click', () => {
+        if(confirm("คุณต้องการย้อนกลับไปใช้ข้อมูลดั้งเดิมที่อยู่ในไฟล์นี้หรือไม่? การเปลี่ยนแปลงที่ยังไม่ได้คัดลอกจะหายไป")) {
+            formatAndSetTextarea(sourceData);
+            showMessage('รีเซ็ตเป็นข้อมูลดั้งเดิมเรียบร้อยแล้ว');
         }
+    });
 
-        /**
-         * Handles uploading a JSON file and populating the textarea.
-         * @param {Event} event - The file input change event.
-         */
-        function handleUploadJson(event) {
-            const file = event.target.files[0];
-            if (!file) {
-                showMessage('กรุณาเลือกไฟล์ JSON', true);
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const loadedData = JSON.parse(e.target.result);
-                    document.getElementById('json-input').value = JSON.stringify(loadedData, null, 2); // Pretty print
-                    showMessage('อัปโหลดข้อมูล JSON สำเร็จแล้ว!');
-                } catch (error) {
-                    console.error('Error parsing JSON:', error);
-                    showMessage('เกิดข้อผิดพลาดในการอ่านไฟล์ JSON: ' + error.message, true);
-                }
-            };
-            reader.onerror = (error) => {
-                console.error('Error reading file:', error);
-                showMessage('เกิดข้อผิดพลาดในการอ่านไฟล์: ' + error.message, true);
-            };
-            reader.readAsText(file);
-            // Clear the file input value to allow selecting the same file again
-            event.target.value = '';
-        }
-
-        // --- Event Listeners (after DOMContentLoaded) ---
-        document.addEventListener('DOMContentLoaded', () => {
-            const downloadButton = document.getElementById('downloadJsonButton');
-            if (downloadButton) {
-                downloadButton.addEventListener('click', handleDownloadJson);
-            }
-
-            const uploadInput = document.getElementById('uploadJsonInput');
-            if (uploadInput) {
-                uploadInput.addEventListener('change', handleUploadJson);
-            }
-        });
-    </script>
+</script>
 </body>
 </html>
