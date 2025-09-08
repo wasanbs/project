@@ -155,7 +155,9 @@
                             <th class="py-3 px-6 text-left text-xs uppercase tracking-wider col-actions">Action</th>
                         </tr>
                     </thead>
-                    <tbody id="progress-table-body" class="bg-white"></tbody>
+                    <tbody id="progress-table-body" class="bg-white">
+                        <tr><td colspan="8" class="text-center p-8 text-gray-500">กำลังโหลดข้อมูล...</td></tr>
+                    </tbody>
                 </table>
             </div>
             
@@ -225,7 +227,7 @@
     // --- Firebase and Core App Dependencies ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, onSnapshot, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     // --- State & Data Definitions ---
     let isEditMode = false;
@@ -234,24 +236,18 @@
     
     // Firebase related variables
     let db, auth, planDocRef;
-    let dataLoaded = false;
-
+    let isInitialized = false;
 
     const defaultUpgradeSteps = [
         { "id": "step-aa", "parentId": null, "title": "ติดตั้งและปรับแต่ง NetIQ (AA)", "description": "ดำเนินการติดตั้งและปรับแต่ง NetIQ Advanced Authentication", "startDate": "2025-05-01", "endDate": "2025-05-20", "status": "Completed", "assignee": "Busisoft", "order": 1 },
-        
         { "id": "step-2-main", "parentId": null, "title": "อัปเกรด NAM (v4.5.3 -> v4.5.5) (Production)", "description": "ดำเนินการอัปเกรด NAM บนระบบจริงเป็นเวอร์ชัน 4.5.5", "startDate": "2025-09-08", "endDate": "2025-09-14", "status": "Not Started", "assignee": "Busisoft", "order": 2 },
         { "id": "step-3-sub", "parentId": "step-2-main", "title": "ติดตามผล NAM v4.5.5", "description": "ตรวจสอบและติดตามผลการทำงานของระบบเป็นเวลา 1 สัปดาห์", "startDate": "2025-09-15", "endDate": "2025-09-21", "status": "Not Started", "assignee": "Busisoft/THP", "order": 3 },
-        
         { "id": "step-4-main", "parentId": null, "title": "อัปเกรด SUSE Linux (12 SP4 -> 12 SP5) (Production)", "description": "ดำเนินการอัปเกรดระบบปฏิบัติการ SUSE Linux บนระบบจริง", "startDate": "2025-09-22", "endDate": "2025-09-28", "status": "Not Started", "assignee": "Busisoft", "order": 4 },
         { "id": "step-5-sub", "parentId": "step-4-main", "title": "ติดตามผล SUSE Linux 12 SP5", "description": "ตรวจสอบและติดตามผลการทำงานของระบบเป็นเวลา 1 สัปดาห์", "startDate": "2025-09-29", "endDate": "2025-10-05", "status": "Not Started", "assignee": "Busisoft/THP", "order": 5 },
-
         { "id": "step-6-main", "parentId": null, "title": "อัปเกรด NAM (v4.5.5 -> v5.0.3) (Production)", "description": "ดำเนินการอัปเกรด NAM บนระบบจริงเป็นเวอร์ชัน 5.0.3", "startDate": "2025-10-06", "endDate": "2025-10-12", "status": "Not Started", "assignee": "Busisoft", "order": 6 },
         { "id": "step-7-sub", "parentId": "step-6-main", "title": "ติดตามผล NAM v5.0.3", "description": "ตรวจสอบและติดตามผลการทำงานของระบบเป็นเวลา 1 สัปดาห์", "startDate": "2025-10-13", "endDate": "2025-10-19", "status": "Not Started", "assignee": "Busisoft/THP", "order": 7 },
-        
         { "id": "step-8-main", "parentId": null, "title": "อัปเกรด NAM (v5.0.3 -> v5.1) (Production)", "description": "ดำเนินการอัปเกรด NAM บนระบบจริงเป็นเวอร์ชันเป้าหมาย 5.1", "startDate": "2025-10-20", "endDate": "2025-10-26", "status": "Not Started", "assignee": "Busisoft", "order": 8 },
         { "id": "step-9-sub", "parentId": "step-8-main", "title": "ติดตามผล NAM v5.1", "description": "ตรวจสอบและติดตามผลการทำงานของระบบเป็นเวลา 1 สัปดาห์", "startDate": "2025-10-27", "endDate": "2025-11-02", "status": "Not Started", "assignee": "Busisoft/THP", "order": 9 },
-
         { "id": "step-10", "parentId": null, "title": "สรุปและส่งมอบโครงการ", "description": "รวบรวมข้อมูล สรุปผลการดำเนินงาน และส่งมอบโครงการ", "startDate": "2025-11-03", "endDate": "2025-11-09", "status": "Not Started", "assignee": "Busisoft", "order": 10 }
     ].map(t => ({...t, notes:"", attachments:[]}));
 
@@ -281,7 +277,7 @@
 
     // --- Core Application Logic ---
     const rerender = () => { 
-        if(dataLoaded) {
+        if(isInitialized) {
             renderProgressTable(); 
             renderProjectTimeline(); 
         }
@@ -334,7 +330,7 @@
         rerender(); 
     };
 
-    window.resetData = () => { if(confirm('คุณต้องการรีเซ็ตข้อมูลทั้งหมดกลับเป็นค่าเริ่มต้นหรือไม่? ข้อมูลที่แก้ไขจะหายไปทั้งหมด')) { upgradeSteps = JSON.parse(JSON.stringify(defaultUpgradeSteps)); saveData(); } };
+    window.resetData = () => { if(confirm('คุณต้องการรีเซ็ตข้อมูลทั้งหมดกลับเป็นค่าเริ่มต้นหรือไม่? ข้อมูลที่แก้ไขจะหายไปทั้งหมด')) { const defaultData = JSON.parse(JSON.stringify(defaultUpgradeSteps)); saveData(defaultData); } };
     window.addTask = () => { const t={id:`t_${Date.now()}`,parentId:null,title:"New Task",description:"",order:upgradeSteps.length,status:"Not Started",assignee:"",startDate:"",endDate:"",notes:"",attachments:[]}; upgradeSteps.push(t); saveData(); };
     window.addSubTask = (pId) => { const p=upgradeSteps.find(t=>t.id===pId); if(!p)return; const st={id:`t_${Date.now()}`,parentId:pId,title:"New Sub-Task",description:"",order:p.order+(buildTaskTree().find(t=>t.id===pId).children.length+1)*0.1,status:"Not Started",assignee:"",startDate:"",endDate:"",notes:"",attachments:[]}; upgradeSteps.push(st); expandedTasks.add(pId); saveData(); };
     window.deleteTask = (tId) => { if(confirm('ต้องการลบ Task นี้และ Task ย่อยทั้งหมด?')){ const ids=new Set([tId]); upgradeSteps.filter(t=>t.parentId===tId).forEach(t=>ids.add(t.id)); upgradeSteps=upgradeSteps.filter(t=>!ids.has(t.id)); saveData();} };
@@ -638,24 +634,23 @@
 
         onAuthStateChanged(auth, user => {
             if (user) {
-                console.log("User is signed in:", user.uid);
                 planDocRef = doc(db, "artifacts", appId, "public", "data", "project_plan");
                 
                 onSnapshot(planDocRef, (docSnap) => {
                     if (docSnap.exists()) {
                         upgradeSteps = docSnap.data().plan || JSON.parse(JSON.stringify(defaultUpgradeSteps));
                     } else {
-                        // Document doesn't exist, create it with default data
-                        console.log("No such document! Creating with default data.");
                         upgradeSteps = JSON.parse(JSON.stringify(defaultUpgradeSteps));
                         setDoc(planDocRef, { plan: upgradeSteps });
                     }
-                    dataLoaded = true;
+                    
+                    if (!isInitialized) {
+                        initializeUI();
+                        isInitialized = true;
+                    }
                     rerender();
                 });
 
-            } else {
-                console.log("User is signed out.");
             }
         });
 
@@ -663,40 +658,40 @@
             try {
                 await signInWithCustomToken(auth, __initial_auth_token);
             } catch (error) {
-                console.error("Error signing in with custom token:", error);
                 await signInAnonymously(auth);
             }
         } else {
             await signInAnonymously(auth);
         }
 
-        // --- UI Initialization ---
-        renderOtherSections();
+        function initializeUI() {
+            renderOtherSections();
         
-        const revEl = document.getElementById('revision-date');
-        if(revEl) revEl.textContent = `(ปรับปรุงแผน ณ วันที่ ${new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })})`;
-        
-        document.getElementById('edit-mode-btn').addEventListener('click', window.toggleEditMode);
-        document.getElementById('add-task-btn').addEventListener('click', window.addTask);
-        document.getElementById('reset-btn').addEventListener('click', window.resetData);
-        
-        const tableBody = document.getElementById('progress-table-body');
-        sortableInstance = Sortable.create(tableBody, {
-            animation: 150, handle: '.drag-handle', ghostClass: 'sortable-ghost',
-            disabled: true,
-            onEnd: function (evt) {
-                const allRows = Array.from(tableBody.querySelectorAll('.task-row'));
-                const allIds = allRows.map(row => row.dataset.id);
-                upgradeSteps.sort((a,b) => allIds.indexOf(a.id) - allIds.indexOf(b.id));
-                upgradeSteps.forEach((t, index) => {
-                    t.order = index;
-                });
-                saveData();
-            },
-        });
-        const sections = document.querySelectorAll('section[id]'), navLinks = document.querySelectorAll('.nav-link');
-        const observer = new IntersectionObserver((e) => { e.forEach(entry => { if (entry.isIntersecting) { navLinks.forEach(l => { l.classList.remove('active'); if (l.getAttribute('href')==='#'+entry.target.id) l.classList.add('active'); }); } }); }, { threshold: 0.3 });
-        sections.forEach(s => observer.observe(s));
+            const revEl = document.getElementById('revision-date');
+            if(revEl) revEl.textContent = `(ปรับปรุงแผน ณ วันที่ ${new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })})`;
+            
+            document.getElementById('edit-mode-btn').addEventListener('click', window.toggleEditMode);
+            document.getElementById('add-task-btn').addEventListener('click', window.addTask);
+            document.getElementById('reset-btn').addEventListener('click', window.resetData);
+            
+            const tableBody = document.getElementById('progress-table-body');
+            sortableInstance = Sortable.create(tableBody, {
+                animation: 150, handle: '.drag-handle', ghostClass: 'sortable-ghost',
+                disabled: true,
+                onEnd: function (evt) {
+                    const allRows = Array.from(tableBody.querySelectorAll('.task-row'));
+                    const allIds = allRows.map(row => row.dataset.id);
+                    upgradeSteps.sort((a,b) => allIds.indexOf(a.id) - allIds.indexOf(b.id));
+                    upgradeSteps.forEach((t, index) => {
+                        t.order = index;
+                    });
+                    saveData();
+                },
+            });
+            const sections = document.querySelectorAll('section[id]'), navLinks = document.querySelectorAll('.nav-link');
+            const observer = new IntersectionObserver((e) => { e.forEach(entry => { if (entry.isIntersecting) { navLinks.forEach(l => { l.classList.remove('active'); if (l.getAttribute('href')==='#'+entry.target.id) l.classList.add('active'); }); } }); }, { threshold: 0.3 });
+            sections.forEach(s => observer.observe(s));
+        }
     });
 </script>
 </body>
