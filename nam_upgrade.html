@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="th" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แผนอัปเกรดระบบ NetIQ Access Manager - ไปรษณีย์ไทย</title>
+    <meta name="robots" content="noindex">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f8fbff; color: #3f3f46; }
+        .bg-primary-blue { background-color: #0D94E8; }
+        .text-primary-blue { color: #0D94E8; }
+        .nav-link { transition: color 0.3s, border-bottom-color 0.3s; font-weight: 600; }
+        .nav-link:hover { color: #2196F3; }
+        .nav-link.active { color: #0D94E8; border-bottom-color: #0D94E8; }
+        .data-management-button:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .task-row.sortable-ghost { background: #e3f2fd; opacity: 0.5; }
+        .task-row.sortable-chosen { cursor: grabbing; }
+        .task-row.is-editable .drag-handle { cursor: grab; }
+        #note-modal { transition: opacity 0.3s ease; }
+        #note-modal > div { transition: transform 0.3s ease; }
+        
+        .task-row.has-children { border-left: 3px solid #90caf9; }
+        .sub-task-row { background-color: #f9fafb; border-left: 3px solid #e0e0e0; }
+        .sub-task-row td { color: #4b5563; }
+
+        /* Status Colors for Dropdown */
+        .status-select-completed { background-color: #f0fdf4 !important; border-color: #a7f3d0 !important; color: #065f46 !important; font-weight: 600; }
+        .status-select-inprogress { background-color: #eff6ff !important; border-color: #bfdbfe !important; color: #312e81 !important; font-weight: 600; }
+
+        .responsive-table { table-layout: fixed; width: 100%; border-collapse: collapse; }
+        .col-drag { width: 4%; min-width: 40px; }
+        .col-order { width: 6%; min-width: 55px; font-weight: 700; color: #1f2937; }
+        .col-task { width: 30%; }
+        .col-assignee { width: 15%; }
+        .col-date { width: 12%; min-width: 140px; }
+        .col-status { width: 12%; min-width: 150px; }
+        .col-actions { width: 9%; min-width: 120px; }
+
+        .editable-input { width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.25rem 0.5rem; background-color: #f9fafb; }
+        .editable-textarea { width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.25rem 0.5rem; resize: vertical; min-height: 40px; background-color: #f9fafb; }
+        .toggle-subtask { cursor: pointer; transition: transform 0.2s; display: inline-block; }
+        .toggle-subtask.collapsed { transform: rotate(-90deg); }
+        
+        .table-header-custom th { background-color: #E3F2FD; font-weight: 700; color: #1f2937; }
+        
+        .revise-badge {
+            display: inline-block;
+            background-color: #fefce8;
+            color: #854d0e;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            vertical-align: middle;
+            margin-left: 0.75rem;
+            border: 1px solid #fde047;
+        }
+        .status-dot {
+            height: 10px;
+            width: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: .5rem;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-40 shadow-sm">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <div class="text-xl font-bold text-primary-blue">
+                ไปรษณีย์ไทย
+            </div>
+            
+            <div class="flex items-center gap-8">
+                <div class="hidden md:flex space-x-8">
+                    <a href="#overview" class="nav-link border-b-2 border-transparent">ภาพรวม</a>
+                    <a href="#progress" class="nav-link border-b-2 border-transparent">ความคืบหน้า</a>
+                    <a href="#improvements" class="nav-link border-b-2 border-transparent">การปรับปรุง</a>
+                    <a href="#version-details" class="nav-link border-b-2 border-transparent">รายละเอียดเวอร์ชัน</a>
+                    <a href="#benefits" class="nav-link border-b-2 border-transparent">ประโยชน์</a>
+                    <a href="#risks" class="nav-link border-b-2 border-transparent">ความเสี่ยง</a>
+                    <a href="#approval" class="nav-link border-b-2 border-transparent">ข้อเสนอแนะ</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-8 md:py-12">
+        <section class="text-center mb-16">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4 flex items-center justify-center">
+                แผนอัปเกรดระบบ NetIQ Access Manager (NAM) <span class="revise-badge">Revise</span>
+            </h1>
+            <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                ปรับปรุงแผนการอัปเกรดสู่เวอร์ชันล่าสุดบนระบบจริง (Production) โดยตรง พร้อมเพิ่มขั้นตอนการติดตามผล (Follow-up) เพื่อสร้างความมั่นใจและลดผลกระทบต่อผู้ใช้งาน
+                <br><span class="text-sm text-gray-500" id="revision-date"></span>
+            </p>
+        </section>
+
+        <section id="overview" class="mb-20 pt-16 -mt-16">
+             <h2 class="text-3xl font-bold text-center mb-12">ภาพรวมโครงการ</h2>
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-700">สถานะปัจจุบันของระบบ</h3>
+                    <ul class="space-y-3 text-gray-700">
+                        <li class="flex items-start"><span class="text-blue-500 mr-3 mt-1">●</span><div><strong>NetIQ Access Manager (NAM):</strong> เวอร์ชัน 4.5.3, SUSE Linux 12 SP4</div></li>
+                        <li class="flex items-start"><span class="text-blue-500 mr-3 mt-1">●</span><div><strong>NetIQ Advanced Authentication (AA):</strong> <span class="font-bold text-green-600">ดำเนินการเสร็จสิ้นเรียบร้อยแล้ว</span></div></li>
+                         <li class="flex items-start"><span class="text-blue-500 mr-3 mt-1">●</span><div><strong>ข้อจำกัดเดิม:</strong> อาจมีช่องโหว่ความปลอดภัยที่ยังไม่ถูกแก้ไข, ขาดคุณสมบัติใหม่ๆ, และส่วนประกอบพื้นฐานเริ่มล้าสมัย</div></li>
+                    </ul>
+                </div>
+                <div class="bg-primary-blue text-white p-8 rounded-xl shadow-lg">
+                    <h3 class="text-2xl font-semibold mb-4">เป้าหมายโครงการ</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start"><span class="text-white mr-3 mt-1">✔</span><div><strong>เวอร์ชัน NAM เป้าหมาย:</strong> NetIQ Access Manager 5.1</div></li>
+                        <li class="flex items-start"><span class="text-white mr-3 mt-1">✔</span><div><strong>ระบบปฏิบัติการเป้าหมาย:</strong> SUSE Linux 12 SP5</div></li>
+                        <li class="flex items-start"><span class="text-white mr-3 mt-1">✔</span><div><strong>การบูรณาการ:</strong> เพิ่ม NetIQ Advanced Authentication (AA) สำหรับ MFA และ Adaptive Authentication</div></li>
+                        <li class="flex items-start"><span class="text-white mr-3 mt-1">✔</span><div><strong>ผลลัพธ์:</strong> ระบบที่ปลอดภัย ทันสมัย เสถียร และพร้อมสำหรับอนาคต</div></li>
+                    </ul>
+                </div>
+            </div>
+             <p class="text-center mt-8 text-gray-600">โครงการนี้มีเป้าหมายเพื่อทำให้ระบบจัดการการเข้าถึง (NAM) ของไปรษณีย์ไทยทันสมัยขึ้น เพื่อให้ระบบมีความปลอดภัยและทำงานได้ดียิ่งขึ้น นอกจากนี้ เราจะเพิ่ม NetIQ Advanced Authentication (AA) เข้ามา เพื่อเสริมความปลอดภัยในการยืนยันตัวตนให้มีหลายชั้น (MFA) และสามารถปรับระดับความปลอดภัยตามความเสี่ยงได้</p>
+        </section>
+
+        <section id="progress" class="mb-20 pt-16 -mt-16">
+            <h2 class="text-3xl font-bold text-center mb-12">การติดตามความคืบหน้าแผนการอัปเกรด</h2>
+            <div class="bg-white rounded-xl shadow-md border border-gray-100 p-4 mb-6 flex flex-wrap justify-center items-center gap-4">
+                 <h3 class="text-lg font-semibold text-gray-700 mr-4">จัดการข้อมูลแผนงาน:</h3>
+                 <div class="flex items-center gap-2 flex-wrap justify-center">
+                     <button onclick="downloadDataAsJson()" class="data-management-button bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">บันทึกเป็น JSON</button>
+                     <button onclick="downloadDataAsExcel()" class="data-management-button bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">บันทึกเป็น Excel</button>
+                     <button id="reset-btn" class="data-management-button bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg hidden">รีเซ็ตข้อมูล</button>
+                     <button id="add-task-btn" class="data-management-button bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hidden">เพิ่ม Task ใหม่</button>
+                     <button id="edit-mode-btn" class="data-management-button bg-yellow-500 hover:bg-yellow-600 text-gray-800 font-bold py-2 px-4 rounded-lg">แก้ไขแผนงาน</button>
+                 </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6 overflow-x-auto">
+                <table class="responsive-table">
+                    <thead class="table-header-custom">
+                        <tr>
+                            <th class="py-3 px-2 text-left text-xs uppercase tracking-wider col-drag"></th>
+                            <th class="py-3 px-6 text-left text-xs uppercase tracking-wider col-order">ลำดับ</th>
+                            <th class="py-3 px-6 text-left text-xs uppercase tracking-wider col-task">ขั้นตอน</th>
+                            <th class="py-3 px-6 text-left text-xs uppercase tracking-wider col-assignee">ผู้รับผิดชอบ</th>
+                            <th class="py-3 px-6 text-left text-xs uppercase tracking-wider col-date">วันที่เริ่มต้น</th>
+                            <th class="py-3 px-6 text-left text-xs uppercase tracking-wider col-date">วันที่สิ้นสุด</th>
+                            <th class="py-3 px-6 text-left text-xs uppercase tracking-wider col-status">สถานะ</th>
+                            <th class="py-3 px-6 text-left text-xs uppercase tracking-wider col-actions">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="progress-table-body" class="bg-white"></tbody>
+                </table>
+            </div>
+            
+            <h3 class="text-2xl font-bold text-center mt-12 mb-8 border-t pt-8">แผนภาพ Timeline โครงการ</h3>
+            <div id="project-timeline-container" class="relative bg-white rounded-xl shadow-lg border p-6 overflow-hidden"></div>
+        </section>
+        
+        <section id="improvements" class="mb-20 pt-16 -mt-16">
+            <h2 class="text-3xl font-bold text-center mb-4">การปรับปรุงที่สำคัญ</h2>
+             <p class="text-center max-w-2xl mx-auto mb-12 text-gray-600">การอัปเกรดครั้งนี้มุ่งเน้นการพัฒนาใน 3 ด้านหลัก คลิกที่ส่วนของแผนภูมิเพื่อดูรายละเอียด</p>
+            <div class="grid lg:grid-cols-2 gap-8 items-center">
+                <div class="chart-container h-80"><canvas id="improvementsChart"></canvas></div>
+                <div id="improvements-details" class="bg-white p-6 rounded-lg shadow-md border min-h-[300px]"></div>
+            </div>
+        </section>
+
+        <section id="version-details" class="mb-20 pt-16 -mt-16">
+            <h2 class="text-3xl font-bold text-center mb-12">รายละเอียดเวอร์ชันระบบ</h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8" id="version-selection-area"></div>
+            <div class="bg-white p-8 rounded-lg shadow-md border min-h-[300px]" id="version-details-display"></div>
+        </section>
+        
+        <section id="benefits" class="mb-20 pt-16 -mt-16">
+            <h2 class="text-3xl font-bold text-center mb-12">ประโยชน์ที่คาดว่าจะได้รับ</h2>
+            <div id="benefits-container" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
+
+        <section id="risks" class="mb-20 pt-16 -mt-16">
+             <h2 class="text-3xl font-bold text-center mb-12">ผลกระทบและความเสี่ยงที่อาจเกิดขึ้น</h2>
+            <div id="risks-container" class="max-w-4xl mx-auto space-y-6"></div>
+        </section>
+        
+        <section id="approval" class="pt-16 -mt-16">
+             <h2 class="text-3xl font-bold text-center mb-12">ข้อแนะนำและการอนุมัติ</h2>
+            <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+                <h3 class="text-2xl font-semibold mb-6">ข้อแนะนำเพื่อความสำเร็จของโครงการ</h3>
+                <div id="recommendations-container" class="space-y-4"></div>
+                <div class="mt-12 pt-8 border-t">
+                    <h3 class="text-2xl font-semibold mb-4 text-center">การอนุมัติ (บริษัท ไปรษณีย์ไทย จำกัด)</h3>
+                    <div class="flex flex-wrap justify-center gap-4 mt-6">
+                        <button class="bg-green-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg">อนุมัติแล้ว</button>
+                        <button class="bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-lg">ดำเนินการในภายหลัง</button>
+                        <button class="bg-red-100 text-red-700 font-bold py-3 px-6 rounded-lg">ไม่ต้องการดำเนินการ</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-20">
+        <div class="container mx-auto px-6 py-8 text-center text-sm">
+             <p>โครงการบริการบำรุงรักษาระบบบริหารจัดการการเข้าถึงระบบสารสนเทศ ปณท (IDM)</p>
+             <p>Prepared by: Wasan | For inquiries, please contact: wasan@busisoft.co.th</p>
+             <p>Last update | วันที่: 20 มิถุนายน 2568</p>
+        </div>
+    </footer>
+
+    <div id="note-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden opacity-0">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl transform scale-95">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b"><h3 id="modal-title" class="text-2xl font-semibold text-gray-800">หมายเหตุ</h3><button onclick="closeNoteModal()" class="text-gray-400 hover:text-gray-800 text-3xl">&times;</button></div>
+            <div><label for="modal-notes" class="block text-sm font-medium text-gray-700 mb-2">บันทึกข้อความ:</label><textarea id="modal-notes" rows="6" class="w-full border rounded-md p-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea></div>
+            <div class="mt-4"><label class="block text-sm font-medium text-gray-700 mb-2">แนบไฟล์รูปภาพ:</label><input type="file" id="modal-attachment-input" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/><div id="modal-attachments-preview" class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4"></div></div>
+            <div class="mt-6 flex justify-end gap-4"><button onclick="closeNoteModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">ยกเลิก</button><button id="modal-save-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">บันทึก</button></div>
+        </div>
+    </div>
+<script type="module">
+    // --- Firebase and Core App Dependencies ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, onSnapshot, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // --- State & Data Definitions ---
+    let isEditMode = false;
+    let sortableInstance = null, upgradeSteps = [];
+    let expandedTasks = new Set(['step-2-main', 'step-4-main', 'step-6-main', 'step-8-main']);
+    
+    // Firebase related variables
+    let db, auth, planDocRef;
+    let dataLoaded = false;
+
+
+    const defaultUpgradeSteps = [
+        { "id": "step-aa", "parentId": null, "title": "ติดตั้งและปรับแต่ง NetIQ (AA)", "description": "ดำเนินการติดตั้งและปรับแต่ง NetIQ Advanced Authentication", "startDate": "2025-05-01", "endDate": "2025-05-20", "status": "Completed", "assignee": "Busisoft", "order": 1 },
+        
+        { "id": "step-2-main", "parentId": null, "title": "อัปเกรด NAM (v4.5.3 -> v4.5.5) (Production)", "description": "ดำเนินการอัปเกรด NAM บนระบบจริงเป็นเวอร์ชัน 4.5.5", "startDate": "2025-09-08", "endDate": "2025-09-14", "status": "Not Started", "assignee": "Busisoft", "order": 2 },
+        { "id": "step-3-sub", "parentId": "step-2-main", "title": "ติดตามผล NAM v4.5.5", "description": "ตรวจสอบและติดตามผลการทำงานของระบบเป็นเวลา 1 สัปดาห์", "startDate": "2025-09-15", "endDate": "2025-09-21", "status": "Not Started", "assignee": "Busisoft/THP", "order": 3 },
+        
+        { "id": "step-4-main", "parentId": null, "title": "อัปเกรด SUSE Linux (12 SP4 -> 12 SP5) (Production)", "description": "ดำเนินการอัปเกรดระบบปฏิบัติการ SUSE Linux บนระบบจริง", "startDate": "2025-09-22", "endDate": "2025-09-28", "status": "Not Started", "assignee": "Busisoft", "order": 4 },
+        { "id": "step-5-sub", "parentId": "step-4-main", "title": "ติดตามผล SUSE Linux 12 SP5", "description": "ตรวจสอบและติดตามผลการทำงานของระบบเป็นเวลา 1 สัปดาห์", "startDate": "2025-09-29", "endDate": "2025-10-05", "status": "Not Started", "assignee": "Busisoft/THP", "order": 5 },
+
+        { "id": "step-6-main", "parentId": null, "title": "อัปเกรด NAM (v4.5.5 -> v5.0.3) (Production)", "description": "ดำเนินการอัปเกรด NAM บนระบบจริงเป็นเวอร์ชัน 5.0.3", "startDate": "2025-10-06", "endDate": "2025-10-12", "status": "Not Started", "assignee": "Busisoft", "order": 6 },
+        { "id": "step-7-sub", "parentId": "step-6-main", "title": "ติดตามผล NAM v5.0.3", "description": "ตรวจสอบและติดตามผลการทำงานของระบบเป็นเวลา 1 สัปดาห์", "startDate": "2025-10-13", "endDate": "2025-10-19", "status": "Not Started", "assignee": "Busisoft/THP", "order": 7 },
+        
+        { "id": "step-8-main", "parentId": null, "title": "อัปเกรด NAM (v5.0.3 -> v5.1) (Production)", "description": "ดำเนินการอัปเกรด NAM บนระบบจริงเป็นเวอร์ชันเป้าหมาย 5.1", "startDate": "2025-10-20", "endDate": "2025-10-26", "status": "Not Started", "assignee": "Busisoft", "order": 8 },
+        { "id": "step-9-sub", "parentId": "step-8-main", "title": "ติดตามผล NAM v5.1", "description": "ตรวจสอบและติดตามผลการทำงานของระบบเป็นเวลา 1 สัปดาห์", "startDate": "2025-10-27", "endDate": "2025-11-02", "status": "Not Started", "assignee": "Busisoft/THP", "order": 9 },
+
+        { "id": "step-10", "parentId": null, "title": "สรุปและส่งมอบโครงการ", "description": "รวบรวมข้อมูล สรุปผลการดำเนินงาน และส่งมอบโครงการ", "startDate": "2025-11-03", "endDate": "2025-11-09", "status": "Not Started", "assignee": "Busisoft", "order": 10 }
+    ].map(t => ({...t, notes:"", attachments:[]}));
+
+    const improvementsChartData = { labels: ['ความปลอดภัย', 'ประสิทธิภาพ', 'คุณสมบัติใหม่'], datasets: [{ data: [60, 25, 15], backgroundColor: ['#0D94E8', '#2196F3', '#64B5F6'], borderWidth: 4, borderColor: '#f8fbff' }] };
+    const benefitsData = [ { icon: '🛡️', title: 'ความปลอดภัยแข็งแกร่งขึ้น', description: 'แก้ไขช่องโหว่สำคัญ รองรับ MFA และเพิ่มการควบคุมการเข้าถึงที่ละเอียดอ่อน' }, { icon: '⚡', title: 'ประสิทธิภาพและความเสถียร', description: 'อัปเดตส่วนประกอบพื้นฐานทำให้ระบบทำงานเร็วขึ้นและมีความน่าเชื่อถือสูง' }, { icon: '⚙️', title: 'บริหารจัดการง่ายและยืดหยุ่น', description: 'ด้วยหน้าจอจัดการใหม่และ REST APIs ที่ดีขึ้น ช่วยลดภาระงานของทีม IT และทำงานอัตโนมัติได้มากขึ้น' }, { icon: '🤝', title: 'ประสบการณ์ผู้ใช้ที่ดีขึ้น', description: 'Single Sign-On (SSO) ที่มีประสิทธิภาพช่วยให้ผู้ใช้เข้าถึงแอปพลิเคชันต่างๆ ได้อย่างราบรื่นและสะดวกสบาย' }, { icon: '🌍', title: 'รองรับการทำงานยุคใหม่', description: 'การเพิ่ม AA ช่วยให้รองรับการทำงานนอกสถานที่ (Mobile Workforce) และการ Login แบบ Offline ได้อย่างปลอดภัย' }, { icon: '🚀', title: 'พร้อมสำหรับอนาคต', description: 'ระบบที่ทันสมัยพร้อมรองรับเทคโนโลยีใหม่ๆ และการเปลี่ยนแปลงทางธุรกิจในอนาคตได้อย่างมั่นใจ' } ];
+    const versionDetailsData = [ { "id": "aa", "name": "NetIQ Advanced Authentication (AA)", "summary": "NetIQ Advanced Authentication (AA) ได้รับการติดตั้งและปรับแต่งเพื่อเพิ่มความสามารถในการยืนยันตัวตนขั้นสูง", "details": [ "รองรับ Multi-Factor Authentication (MFA) หลากหลายรูปแบบ เช่น รหัสผ่านครั้งเดียว (OTP), Biometrics (ลายนิ้วมือ, ใบหน้า), Push Notifications", "เพิ่ม Adaptive Authentication Policy: สามารถกำหนดนโยบายความปลอดภัยที่ปรับเปลี่ยนได้ตามบริบทการเข้าถึง (เช่น ตำแหน่งที่ตั้ง, อุปกรณ์ที่ใช้, พฤติกรรมการเข้าสู่ระบบ) เพื่อเพิ่มความปลอดภัยโดยไม่กระทบประสบการณ์ผู้ใช้มากเกินไป", "ลดความเสี่ยงจากการเข้าถึงโดยไม่ได้รับอนุญาต: ด้วยการยืนยันตัวตนที่แข็งแกร่งขึ้น ช่วยป้องกันการโจมตีแบบ Phishing, Credential Stuffing และ Brute-force Attacks", "ปรับปรุงประสบการณ์ผู้ใช้: ด้วยการรวมวิธีการยืนยันตัวตนที่หลากหลายและยืดหยุ่น ทำให้ผู้ใช้สามารถเข้าถึงระบบได้อย่างปลอดภัยและสะดวกสบายยิ่งขึ้น", "รองรับมาตรฐานความปลอดภัยล่าสุด: ช่วยให้องค์กรปฏิบัติตามข้อกำหนดด้าน Regulatory Compliance และมาตรฐานความปลอดภัยข้อมูลที่เข้มงวดขึ้น" ] }, { "id": "v4.5.3", "name": "NetIQ Access Manager 4.5.3 (เวอร์ชันปัจจุบัน)", "summary": "เวอร์ชันปัจจุบันของ NAM ที่กำลังใช้งานอยู่และกำลังจะได้รับการอัปเกรด", "details": [ "ระบบปฏิบัติการ: ทำงานบน SUSE Linux Enterprise Server 12 SP4 ซึ่งใกล้จะหมดอายุการสนับสนุน (End-of-Life) ทำให้มีความเสี่ยงด้านความปลอดภัยและขาดการอัปเดตแพตช์", "ส่วนประกอบพื้นฐาน: Apache HTTP Server (เวอร์ชันเก่า), Tomcat Application Server (เวอร์ชันเก่า), OpenSSL (เวอร์ชันเก่า) ซึ่งอาจมีช่องโหว่ที่ทราบแล้วแต่ยังไม่ได้รับการแก้ไข", "ช่องโหว่ความปลอดภัย: อาจมีช่องโหว่ด้านความปลอดภัยที่ยังไม่ถูกแก้ไข (Known Vulnerabilities) ที่อาจถูกโจมตีได้ เช่น Cross-Site Scripting (XSS), SQL Injection, หรือการรั่วไหลของข้อมูล", "คุณสมบัติ: ขาดคุณสมบัติใหม่ๆ ที่มีในเวอร์ชันที่สูงกว่า เช่น การจัดการคอนโซลที่ทันสมัย, REST APIs ที่มีประสิทธิภาพ และการรองรับโปรโตคอลการยืนยันตัวตนใหม่ๆ", "ความซับซ้อนในการจัดการ: การจัดการระบบยังคงใช้หน้าจอแบบเดิมซึ่งอาจไม่เป็นมิตรกับผู้ใช้งานเท่าที่ควร" ] }, { "id": "v4.5.5", "name": "NetIQ Access Manager 4.5.5 (Patch Update)", "summary": "การอัปเกรดแพตช์สำหรับ NAM 4.5.x เพื่อปรับปรุงพื้นฐานและแก้ไขช่องโหว่เร่งด่วน", "details": [ "อัปเดตส่วนประกอบ: อัปเดต Tomcat เป็นเวอร์ชัน 8.5.72, OpenSSL เป็นเวอร์ชัน 1.0.2za, และ Apache HTTP Server เป็นเวอร์ชัน 2.4.51 เพื่อแก้ไขช่องโหว่ที่พบในเวอร์ชันเก่า", "แก้ไขปัญหาความปลอดภัย: ปรับปรุงการจัดการอักขระพิเศษ (Special Character Handling) เพื่อป้องกันการโจมตีแบบ Injection ที่เกิดจากการป้อนข้อมูลที่ไม่ถูกต้อง", "แก้ไขช่องโหว่ SAML: แก้ไขปัญหาที่เกี่ยวข้องกับ Security Assertion Markup Language (SAML) ซึ่งอาจถูกใช้ในการยืนยันตัวตนที่ผิดพลาดหรือการปลอมแปลงข้อมูล (CVEs specific to SAML vulnerabilities if applicable)", "ปรับปรุงความเสถียร: เพิ่มความเสถียรและประสิทธิภาพโดยรวมของระบบด้วยการแก้ไขข้อผิดพลาดเล็กๆ น้อยๆ และปรับปรุงประสิทธิภาพการทำงานของ Core Components" ] }, { "id": "v5.0.3", "name": "NetIQ Access Manager 5.0.3 (Major Update)", "summary": "การอัปเกรดเวอร์ชันหลักที่มาพร้อมคุณสมบัติใหม่และการแก้ไขช่องโหว่ที่สำคัญ", "details": [ "รองรับ Kerberos Privileged Attribute Certificate (PAC): เพิ่มความสามารถในการจัดการ Kerberos PAC ซึ่งช่วยให้การยืนยันตัวตนและการจัดการสิทธิ์ในสภาพแวดล้อม Active Directory มีประสิทธิภาพและปลอดภัยยิ่งขึ้น", "แก้ไขช่องโหว่ Log4j: ปิดช่องโหว่ Apache Log4j ที่ร้ายแรง (CVE-2021-44228, CVE-2021-45046) ซึ่งเป็นช่องโหว่ Zero-day ที่ส่งผลกระทบต่อแอปพลิเคชัน Java จำนวนมากและสามารถนำไปสู่การควบคุมระบบจากระยะไกลได้", "แก้ไขช่องโหว่ Multiple XSS: แก้ไขช่องโหว่ Cross-Site Scripting (XSS) หลายจุด (เช่น CVE-2022-26325) ที่อาจถูกใช้ในการโจมตีผู้ใช้งานโดยการฝัง Script ที่เป็นอันตรายลงในหน้าเว็บ", "อัปเดตส่วนประกอบ: อัปเดต Tomcat เป็นเวอร์ชัน 9.0.65, Apache เป็นเวอร์ชัน 2.4.54 เพื่อเพิ่มประสิทธิภาพและความปลอดภัยของแพลตฟอร์ม", "ปรับปรุงประสิทธิภาพ: มีการปรับปรุงภายในเพื่อเพิ่มประสิทธิภาพการทำงานและลด Latency ในการประมวลผลคำขอ" ] }, { "id": "v5.1", "name": "NetIQ Access Manager 5.1 (Target Version)", "summary": "เวอร์ชันเป้าหมายที่มีการปรับปรุงครั้งใหญ่ด้านการจัดการ ความปลอดภัย และ REST APIs เพื่อรองรับอนาคต", "details": [ "Enhanced Administration Console (Angular UI): ผู้ดูแลระบบจะได้รับหน้าจอการจัดการใหม่ที่ทันสมัย ใช้งานง่ายขึ้น พัฒนาด้วย Angular UI ซึ่งช่วยเพิ่มประสิทธิภาพในการตั้งค่า, ตรวจสอบ, และแก้ไขปัญหาต่างๆ", "ปรับปรุง REST APIs สำหรับ Automation: RESTful APIs ได้รับการปรับปรุงและขยายขีดความสามารถ ทำให้สามารถทำงานร่วมกับระบบอื่นๆ ได้อย่างราบรื่นยิ่งขึ้น และรองรับการทำงานแบบอัตโนมัติ (Automation) สำหรับงานด้านการจัดการผู้ใช้, แอปพลิเคชัน, และนโยบายต่างๆ", "แก้ไขช่องโหว่ความปลอดภัยเพิ่มเติม: แก้ไขช่องโหว่สำคัญ เช่น Directory Traversal (การเข้าถึงไฟล์นอกเหนือจากที่กำหนด), User Impersonation (การปลอมแปลงเป็นผู้ใช้รายอื่น), และ XSS (Cross-Site Scripting) เพิ่มเติม เพื่อเสริมความแข็งแกร่งของระบบ", "ความสามารถในการบูรณาการที่ดีขึ้น: ช่วยให้สามารถบูรณาการกับระบบ Cloud, Mobile Applications, และ Identity Providers ภายนอกได้อย่างง่ายดาย", "รองรับมาตรฐาน OpenID Connect/OAuth 2.0: ยืนยันการรองรับมาตรฐานการยืนยันตัวตนและการอนุญาตล่าสุดเพื่อความเข้ากันได้กับแอปพลิเคชันยุคใหม่", "ลด Downtime ในการอัปเกรด: มีการปรับปรุงกระบวนการอัปเกร드ให้มีความราบรื่นมากขึ้น ลดเวลาที่ระบบจะต้องหยุดทำงาน" ] } ];
+    const risksData = [ { title: 'ความซับซ้อนในการดำเนินการ', description: 'ระบบ IAM มีความซับซ้อนในการตั้งค่า ซึ่งอาจนำไปสู่ข้อผิดพลาดได้', mitigation: 'ดำเนินการแบบขั้นบันไดและทดสอบอย่างละเอียดโดยทีมผู้เชี่ยวชาญ' }, { title: 'ปัญหาความเข้ากันได้ของระบบ', description: 'ส่วนประกอบต่างๆ อาจมีปัญหาความเข้ากันไม่ได้', mitigation: 'ปฏิบัติตามข้อกำหนดของผลิตภัณฑ์อย่างเคร่งครัดและทดสอบการทำงานร่วมกัน' }, { title: 'ผลกระทบต่อผู้ใช้งาน', description: 'การเปลี่ยนแปลงระบบอาจสร้างความสับสนให้ผู้ใช้งานในช่วงแรก', mitigation: 'วางแผนการสื่อสารและจัดทำคู่มือให้ผู้ใช้ทราบล่วงหน้า' } ];
+    
+    const recommendationsData = [ 
+        "ควรมีการวางแผนโครงการที่ละเอียดรอบคอบ จัดสรรทรัพยากรที่เพียงพอ และบริหารจัดการความเสี่ยงอย่างต่อเนื่อง", 
+        "ควรมีการสื่อสารที่ชัดเจนไปยังผู้ใช้งานเกี่ยวกับประโยชน์และการเปลี่ยนแปลงที่อาจเกิดขึ้น", 
+        "หลังการอัปเกรด ควรมีการตรวจสอบประสิทธิภาพและความปลอดภัยของระบบอย่างต่อเนื่อง" 
+    ];
+
+    // --- Data Persistence & Export ---
+    async function saveData() { 
+        if (!planDocRef) return;
+        try {
+            await setDoc(planDocRef, { plan: upgradeSteps });
+        } catch (error) {
+            console.error("Error saving data to Firestore:", error);
+        }
+    }
+    
+    window.downloadDataAsJson = () => { try { const d=JSON.stringify(upgradeSteps,null,2); const b=new Blob([d],{type:"application/json"}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download='netiq_plan.json'; a.click(); URL.revokeObjectURL(u); } catch (e) { alert("Error."); } }
+    window.downloadDataAsExcel = () => { try { const data=[]; const h=["ลำดับ","ขั้นตอน","รายละเอียด","ผู้รับผิดชอบ","เริ่ม","สิ้นสุด","สถานะ"]; const tree=buildTaskTree(); let c=1; function p(tasks,pfix='') { tasks.sort((a,b)=>a.order-b.order).forEach((t,i)=>{ data.push([pfix?`${pfix}.${i+1}`:c++,t.title,t.description,t.assignee,formatDate(t.startDate),formatDate(t.endDate),t.status]); if(t.children.length>0){p(t.children,pfix?`${pfix}.${i+1}`:`${c-1}`);}}); } p(tree); const ws=XLSX.utils.aoa_to_sheet([h,...data]); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"Plan"); XLSX.writeFile(wb,"netiq_plan.xlsx"); } catch (e) { alert("Error."); } }
+
+    // --- Core Application Logic ---
+    const rerender = () => { 
+        if(dataLoaded) {
+            renderProgressTable(); 
+            renderProjectTimeline(); 
+        }
+    };
+    const formatDate = (d) => { if(!d) return ''; try { const dt=new Date(d); return `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()}`; } catch (e) { return ''; } };
+    
+    function checkAndUpdateStatuses() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); 
+        let updated = false;
+        upgradeSteps.forEach(task => {
+            if (task.status !== 'Completed' && task.endDate) {
+                const endDate = new Date(task.endDate);
+                if (endDate < today) {
+                    task.status = 'Completed';
+                    updated = true;
+                }
+            }
+        });
+        if (updated) {
+            saveData();
+        }
+    }
+
+    window.updateTaskData = (tId, f, v) => { const t = upgradeSteps.find(t => t.id === tId); if (t) { t[f] = v; saveData(); /* No rerender needed, onSnapshot will handle it */ } };
+    const buildTaskTree = () => { const map=new Map(upgradeSteps.map(t => [t.id,{...t,children:[]}])); const tree=[]; for(const t of map.values()){ if(t.parentId&&map.has(t.parentId)){map.get(t.parentId).children.push(t);} else {tree.push(t);}} return tree; };
+
+    // --- Edit Mode & Task Management ---
+    window.toggleEditMode = () => { 
+        if (!isEditMode) {
+            const password = prompt("กรุณาใส่รหัสผ่านเพื่อแก้ไข:");
+            if (btoa(password) !== "YWJjMTIzNA==") { // "abc1234" in Base64
+                alert("รหัสผ่านไม่ถูกต้อง!");
+                return;
+            }
+        }
+
+        isEditMode=!isEditMode; 
+        const btn=document.getElementById('edit-mode-btn'); 
+        btn.textContent = isEditMode ? 'ดูข้อมูล (บันทึกอัตโนมัติ)' : 'แก้ไขแผนงาน'; 
+        btn.classList.toggle('bg-yellow-500', !isEditMode); 
+        btn.classList.toggle('hover:bg-yellow-600', !isEditMode); 
+        btn.classList.toggle('text-gray-800', !isEditMode);
+        btn.classList.toggle('bg-green-600', isEditMode); 
+        btn.classList.toggle('hover:bg-green-700', isEditMode);
+        btn.classList.toggle('text-white', isEditMode); 
+        document.getElementById('add-task-btn').classList.toggle('hidden');
+        document.getElementById('reset-btn').classList.toggle('hidden');
+        sortableInstance.option('disabled', !isEditMode); 
+        rerender(); 
+    };
+
+    window.resetData = () => { if(confirm('คุณต้องการรีเซ็ตข้อมูลทั้งหมดกลับเป็นค่าเริ่มต้นหรือไม่? ข้อมูลที่แก้ไขจะหายไปทั้งหมด')) { upgradeSteps = JSON.parse(JSON.stringify(defaultUpgradeSteps)); saveData(); } };
+    window.addTask = () => { const t={id:`t_${Date.now()}`,parentId:null,title:"New Task",description:"",order:upgradeSteps.length,status:"Not Started",assignee:"",startDate:"",endDate:"",notes:"",attachments:[]}; upgradeSteps.push(t); saveData(); };
+    window.addSubTask = (pId) => { const p=upgradeSteps.find(t=>t.id===pId); if(!p)return; const st={id:`t_${Date.now()}`,parentId:pId,title:"New Sub-Task",description:"",order:p.order+(buildTaskTree().find(t=>t.id===pId).children.length+1)*0.1,status:"Not Started",assignee:"",startDate:"",endDate:"",notes:"",attachments:[]}; upgradeSteps.push(st); expandedTasks.add(pId); saveData(); };
+    window.deleteTask = (tId) => { if(confirm('ต้องการลบ Task นี้และ Task ย่อยทั้งหมด?')){ const ids=new Set([tId]); upgradeSteps.filter(t=>t.parentId===tId).forEach(t=>ids.add(t.id)); upgradeSteps=upgradeSteps.filter(t=>!ids.has(t.id)); saveData();} };
+    window.toggleSubtasks = (tId) => { expandedTasks.has(tId)?expandedTasks.delete(tId):expandedTasks.add(tId); rerender(); };
+
+    // --- UI Rendering ---
+    function renderProgressTable() {
+        const tableBody = document.getElementById('progress-table-body');
+        tableBody.innerHTML = '';
+        const taskTree = buildTaskTree();
+        let mainCounter = 1;
+
+        function renderRows(tasks, isSub = false, prefix = '') {
+            tasks.sort((a, b) => a.order - b.order).forEach((task, index) => {
+                const row = document.createElement('tr');
+                const hasChildren = task.children.length > 0;
+                
+                row.className = `task-row border-b border-gray-200 ${isSub ? 'sub-task-row' : ''} ${isEditMode ? 'is-editable' : ''} ${hasChildren ? 'has-children' : ''}`;
+                row.setAttribute('data-id', task.id);
+
+                const orderText = isSub ? `${prefix}.${index + 1}` : `${mainCounter++}`;
+                
+                const taskCell = isEditMode 
+                    ? `<input class="editable-input font-semibold" value="${task.title}" oninput="updateTaskData('${task.id}','title',this.value)"><textarea class="editable-textarea text-xs mt-1" oninput="updateTaskData('${task.id}','description',this.value)">${task.description}</textarea>` 
+                    : `<div class="font-semibold">${task.title}</div><div class="text-xs text-gray-500">${task.description}</div>`;
+
+                const toggle = hasChildren ? `<span class="toggle-subtask ${expandedTasks.has(task.id)?'':'collapsed'}" onclick="toggleSubtasks('${task.id}')">▾</span>` : '';
+                
+                const assigneeCell = isEditMode 
+                    ? `<input class="editable-input" value="${task.assignee || ''}" oninput="updateTaskData('${task.id}', 'assignee', this.value)">` 
+                    : `<div class="break-words">${task.assignee || ''}</div>`;
+                
+                const startDateCell = isEditMode
+                    ? `<input type="date" value="${task.startDate}" class="border rounded px-2 py-1 text-sm w-full bg-white" onchange="updateTaskData('${task.id}','startDate',this.value)">`
+                    : `<span>${formatDate(task.startDate)}</span>`;
+
+                const endDateCell = isEditMode
+                    ? `<input type="date" value="${task.endDate}" class="border rounded px-2 py-1 text-sm w-full bg-white" onchange="updateTaskData('${task.id}','endDate',this.value)">`
+                    : `<span>${formatDate(task.endDate)}</span>`;
+
+                const actions = isEditMode 
+                    ? `<div class="flex items-center">
+                        <button onclick="openNoteModal('${task.id}')" title="หมายเหตุ" class="text-blue-600 p-1 hover:bg-blue-100 rounded"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2z"/><path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5M3 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8m0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5"/></svg></button>
+                        <button onclick="addSubTask('${task.id}')" title="เพิ่ม Sub-task" class="text-green-600 p-1 hover:bg-green-100 rounded"><svg fill="currentColor" width="16" height="16" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg></button>
+                        <button onclick="deleteTask('${task.id}')" title="ลบ Task" class="text-red-600 p-1 hover:bg-red-100 rounded"><svg fill="currentColor" width="16" height="16" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1h-11z"/></svg></button>
+                      </div>`
+                    : `<button onclick="openNoteModal('${task.id}')" class="text-blue-600 hover:text-blue-900 text-xs font-semibold">หมายเหตุ</button>`;
+                
+                const selectStatusClass = task.status === 'Completed' ? 'status-select-completed' : task.status === 'In Progress' ? 'status-select-inprogress' : '';
+                const statusCell = isEditMode
+                    ? `<select class="border rounded px-2 py-1 text-sm w-full font-semibold ${selectStatusClass}" onchange="updateTaskData('${task.id}','status',this.value)">
+                        <option value="Not Started" ${task.status === 'Not Started'?'selected':''}>Not Started</option>
+                        <option value="In Progress" ${task.status === 'In Progress'?'selected':''}>In Progress</option>
+                        <option value="Completed" ${task.status === 'Completed'?'selected':''}>Completed</option>
+                       </select>`
+                    : `<div class="flex items-center"><span class="status-dot ${task.status === 'Completed' ? 'bg-green-500' : task.status === 'In Progress' ? 'bg-blue-500' : 'bg-gray-400'}"></span> ${task.status}</div>`;
+
+                const orderCellPadding = isSub ? 'pl-10 pr-6' : 'px-6';
+                row.innerHTML = `<td class="py-4 px-2 text-sm text-gray-400 text-center drag-handle">${isEditMode ? '<svg class="inline-block" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M7 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0m3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0M7 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0m3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0m-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0m3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0m-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0m3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0"/></svg>' : ''}</td><td class="py-4 text-sm text-gray-800 font-bold ${orderCellPadding}"><div class="flex items-center gap-2">${orderText} ${toggle}</div></td><td class="py-4 px-6 text-sm text-gray-900">${taskCell}</td><td class="py-4 px-6 text-sm text-gray-500">${assigneeCell}</td><td class="py-4 px-6 text-sm">${startDateCell}</td><td class="py-4 px-6 text-sm">${endDateCell}</td><td class="py-4 px-6 text-sm">${statusCell}</td><td class="py-4 px-6 text-left text-sm font-medium">${actions}</td>`;
+                tableBody.appendChild(row);
+                if (hasChildren && expandedTasks.has(task.id)) renderRows(task.children, true, orderText);
+            });
+        }
+        renderRows(taskTree);
+    }
+    
+   function renderProjectTimeline() {
+        const container = document.getElementById('project-timeline-container');
+        container.innerHTML = '';
+        const validSteps = upgradeSteps.filter(s => s.startDate && s.endDate);
+        if (validSteps.length === 0) {
+            container.innerHTML = '<p class="text-gray-500">ไม่มีข้อมูลวันที่สำหรับแสดง Timeline</p>';
+            return;
+        }
+
+        const allDates = validSteps.flatMap(s => [new Date(s.startDate), new Date(s.endDate)]);
+        let projectStart = new Date(Math.min(...allDates));
+        let projectEnd = new Date(Math.max(...allDates));
+
+        const activeMonths = new Set();
+        validSteps.forEach(step => {
+            let d = new Date(step.startDate);
+            const end = new Date(step.endDate);
+            while(d <= end) {
+                activeMonths.add(`${d.getFullYear()}-${d.getMonth()}`);
+                d.setMonth(d.getMonth() + 1);
+            }
+        });
+        
+        projectStart.setDate(1);
+        projectEnd.setDate(new Date(projectEnd.getFullYear(), projectEnd.getMonth() + 1, 0).getDate());
+
+        const timelineWrapper = document.createElement('div');
+        timelineWrapper.className = 'w-full overflow-x-auto relative';
+        
+        const ganttContainer = document.createElement('div');
+        ganttContainer.className = 'relative grid gap-y-1';
+        ganttContainer.style.gridTemplateColumns = '250px 1fr';
+        
+        const headerContainer = document.createElement('div');
+        headerContainer.className = 'col-start-2 sticky top-0 z-10 bg-white/80 backdrop-blur-sm pr-4';
+
+        const axisEl = document.createElement('div');
+        axisEl.className = 'relative h-8 flex border-b-2 border-gray-200';
+        headerContainer.appendChild(axisEl);
+
+        const gridEl = document.createElement('div');
+        gridEl.className = 'absolute inset-0 top-0 col-start-2 row-start-1 row-span-full -z-10 flex';
+        
+        const timelineSegments = [];
+        let currentDate = new Date(projectStart);
+        while (currentDate <= projectEnd) {
+            const monthKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}`;
+            const isActive = activeMonths.has(monthKey);
+            const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+            
+            timelineSegments.push({
+                date: new Date(currentDate),
+                duration: daysInMonth * 24 * 60 * 60 * 1000,
+                weight: isActive ? 3 : 1
+            });
+            currentDate.setMonth(currentDate.getMonth() + 1);
+        }
+
+        const totalWeightedDuration = timelineSegments.reduce((sum, seg) => sum + seg.weight, 0);
+        let accumulatedWidth = 0;
+
+        timelineSegments.forEach(segment => {
+            const widthPercent = (segment.weight / totalWeightedDuration) * 100;
+            const monthLabel = document.createElement('div');
+            monthLabel.textContent = segment.date.toLocaleDateString('th-TH', { month: 'short', year: 'numeric' });
+            monthLabel.className = 'text-xs text-gray-500 absolute whitespace-nowrap pt-1';
+            monthLabel.style.left = `${accumulatedWidth}%`;
+            axisEl.appendChild(monthLabel);
+
+            const gridLine = document.createElement('div');
+            gridLine.className = 'h-full border-l border-gray-100 absolute top-0';
+            gridLine.style.left = `${accumulatedWidth}%`;
+            gridEl.appendChild(gridLine);
+            
+            segment.startPercent = accumulatedWidth;
+            segment.widthPercent = widthPercent;
+            accumulatedWidth += widthPercent;
+        });
+
+        ganttContainer.appendChild(headerContainer);
+        ganttContainer.appendChild(gridEl);
+        
+        const sortedSteps = [...upgradeSteps].sort((a, b) => a.order - b.order);
+        sortedSteps.forEach(step => {
+            if (!step.startDate || !step.endDate) return;
+
+            const taskLabel = document.createElement('div');
+            taskLabel.className = 'text-sm font-medium text-gray-600 pr-4 py-1 flex items-center h-10 whitespace-normal';
+            taskLabel.textContent = step.title;
+            if (step.parentId) {
+                taskLabel.classList.add('pl-6', 'text-gray-500', 'font-normal');
+            }
+            ganttContainer.appendChild(taskLabel);
+
+            const trackEl = document.createElement('div');
+            trackEl.className = 'w-full h-10 relative';
+            
+            const stepStart = new Date(step.startDate);
+            const stepEnd = new Date(step.endDate);
+
+            function getPercentForDate(date) {
+                let percent = 0;
+                const targetTime = date.getTime();
+                for(const segment of timelineSegments) {
+                    const segmentStart = segment.date.getTime();
+                    const segmentEnd = segmentStart + segment.duration;
+                    if (targetTime >= segmentStart && targetTime < segmentEnd) {
+                        const proportion = (targetTime - segmentStart) / segment.duration;
+                        percent = segment.startPercent + (proportion * segment.widthPercent);
+                        break;
+                    } else if (targetTime >= segmentEnd) {
+                        percent = segment.startPercent + segment.widthPercent;
+                    }
+                }
+                return percent;
+            }
+            
+            const offsetPercent = getPercentForDate(stepStart);
+            const endPercent = getPercentForDate(stepEnd);
+            const widthPercent = Math.max(0.5, endPercent - offsetPercent);
+
+            const bar = document.createElement('div');
+            bar.className = 'absolute h-[70%] top-[15%] rounded flex items-center px-2 text-white text-xs shadow-sm';
+            bar.style.left = `${offsetPercent}%`;
+            bar.style.width = `${widthPercent}%`;
+            bar.style.backgroundColor = step.status === 'Completed' ? '#10b981' : step.status === 'In Progress' ? '#3b82f6' : '#9ca3af';
+            bar.title = `${step.title}\n${formatDate(step.startDate)} - ${formatDate(step.endDate)}`;
+            
+            const barLabel = document.createElement('span');
+            barLabel.className = 'truncate';
+            barLabel.textContent = step.title;
+            bar.appendChild(barLabel);
+
+            trackEl.appendChild(bar);
+            ganttContainer.appendChild(trackEl);
+        });
+        
+        timelineWrapper.appendChild(ganttContainer);
+        container.appendChild(timelineWrapper);
+    }
+
+    function displayImprovementDetails(index) {
+        const detailsContainer = document.getElementById('improvements-details');
+        if (!detailsContainer) return;
+        let content = '';
+        switch (index) {
+            case 0: // ความปลอดภัย
+                content = `
+                    <h3 class="font-bold text-xl mb-3 text-primary-blue">ด้านความปลอดภัย (Security)</h3>
+                    <p class="mb-2">การอัปเกรดนี้เป็นการยกระดับความปลอดภัยครั้งสำคัญของระบบ โดยเน้นการปิดช่องโหว่ที่เคยมีในเวอร์ชันเก่าและเพิ่มความสามารถในการป้องกันการโจมตีรูปแบบใหม่ๆ</p>
+                    <ul class="list-disc list-inside space-y-2 text-gray-700">
+                        <li><strong>แก้ไขช่องโหว่ร้ายแรง:</strong> ปิดช่องโหว่สำคัญ เช่น Log4j, Multiple XSS, Directory Traversal และ User Impersonation</li>
+                        <li><strong>รองรับ MFA:</strong> บูรณาการกับ NetIQ Advanced Authentication (AA) เพื่อเปิดใช้งานการยืนยันตัวตนหลายปัจจัย</li>
+                        <li><strong>อัปเดตส่วนประกอบพื้นฐาน:</strong> ใช้ Apache, Tomcat, OpenSSL เวอร์ชันใหม่ล่าสุดเพื่อความปลอดภัยสูงสุด</li>
+                    </ul>`;
+                break;
+            case 1: // ประสิทธิภาพ
+                content = `
+                    <h3 class="font-bold text-xl mb-3 text-primary-blue">ด้านประสิทธิภาพ (Performance)</h3>
+                    <p class="mb-2">ระบบที่อัปเกรดแล้วจะทำงานได้เร็วขึ้น เสถียรขึ้น และรองรับการทำงานพร้อมกันจำนวนมากได้ดีกว่าเดิม ลดปัญหาคอขวดและเพิ่มความน่าเชื่อถือ</p>
+                    <ul class="list-disc list-inside space-y-2 text-gray-700">
+                        <li><strong>ลด Latency:</strong> ปรับปรุง Core Components เพื่อลดเวลาในการประมวลผลคำขอ Single Sign-On (SSO)</li>
+                        <li><strong>เพิ่มความเสถียร:</strong> การใช้ส่วนประกอบพื้นฐานเวอร์ชันใหม่ช่วยลดโอกาสที่ระบบจะหยุดทำงานโดยไม่คาดคิด</li>
+                        <li><strong>กระบวนการอัปเกรดราบรื่น:</strong> ลด Downtime ในการอัปเกรดเวอร์ชันในอนาคต</li>
+                    </ul>`;
+                break;
+            case 2: // คุณสมบัติใหม่
+                content = `
+                    <h3 class="font-bold text-xl mb-3 text-primary-blue">ด้านคุณสมบัติใหม่ (New Features)</h3>
+                    <p class="mb-2">เวอร์ชันใหม่มาพร้อมเครื่องมือที่ช่วยให้ผู้ดูแลระบบทำงานได้ง่ายขึ้น และรองรับการทำงานอัตโนมัติเพื่อลดภาระงานที่ต้องทำซ้ำๆ</p>
+                    <ul class="list-disc list-inside space-y-2 text-gray-700">
+                        <li><strong>หน้าจอจัดการใหม่ (Angular UI):</strong> ทันสมัย ใช้งานง่าย และตอบสนองได้ดีกว่าเดิม</li>
+                        <li><strong>ปรับปรุง REST APIs:</strong> เพิ่มความสามารถในการทำงานอัตโนมัติ (Automation) และการเชื่อมต่อกับระบบอื่นๆ</li>
+                        <li><strong>รองรับมาตรฐานใหม่:</strong> เข้ากันได้กับแอปพลิเคชันยุคใหม่ที่ใช้ OpenID Connect/OAuth 2.0</li>
+                    </ul>`;
+                break;
+            default:
+                content = '<p class="text-gray-500 p-4">กรุณาเลือกส่วนในแผนภูมิเพื่อดูรายละเอียด</p>';
+        }
+        detailsContainer.innerHTML = content;
+    }
+
+    function createImprovementsChart(){
+        const ctx=document.getElementById('improvementsChart');
+        if(!ctx)return;
+        new Chart(ctx,{
+            type:'doughnut',
+            data:improvementsChartData,
+            options:{
+                responsive:true,
+                maintainAspectRatio:false,
+                cutout:'60%',
+                plugins:{ legend:{ position:'bottom' }},
+                onClick: (evt, elements) => {
+                    if (elements.length > 0) {
+                        const clickedIndex = elements[0].index;
+                        displayImprovementDetails(clickedIndex);
+                    }
+                }
+            }
+        });
+    }
+
+    function renderOtherSections() {
+        createImprovementsChart();
+        displayImprovementDetails(0); 
+        const benefitsContainer = document.getElementById('benefits-container');
+        if(benefitsContainer) benefitsContainer.innerHTML = benefitsData.map(item => `<div class="bg-white p-6 rounded-xl shadow-md border"><div class="text-4xl">${item.icon}</div><div><h3 class="text-xl font-semibold mt-2 mb-2">${item.title}</h3><p class="text-gray-600">${item.description}</p></div></div>`).join('');
+        renderVersionSelection();
+        renderRisks();
+        const recommendationsContainer = document.getElementById('recommendations-container');
+        if(recommendationsContainer) recommendationsContainer.innerHTML = recommendationsData.map(rec => `<div class="bg-blue-50 p-4 rounded-lg border border-blue-200 flex items-start space-x-3"><span class="text-blue-600 text-lg">💡</span><p class="text-gray-700">${rec}</p></div>`).join('');
+    }
+    
+    window.openNoteModal = (tId)=>{ let t=upgradeSteps.find(t=>t.id===tId);if(!t)return;document.getElementById('modal-title').textContent=`หมายเหตุ: ${t.title}`;document.getElementById('modal-notes').value=t.notes||'';const p=document.getElementById('modal-attachments-preview');p.innerHTML='';if(t.attachments)t.attachments.forEach(s=>{const i=document.createElement('img');i.src=s;i.className='w-full h-auto rounded-md';p.appendChild(i)});document.getElementById('modal-attachment-input').value='';const m=document.getElementById('note-modal');m.classList.remove('hidden');setTimeout(()=>{m.classList.remove('opacity-0');m.querySelector('div').classList.remove('scale-95')},10); document.getElementById('modal-save-btn').onclick = () => saveNote(tId);};
+    window.closeNoteModal=()=>{const m=document.getElementById('note-modal');m.classList.add('opacity-0');m.querySelector('div').classList.add('scale-95');setTimeout(()=>{m.classList.add('hidden')},300)};
+    function saveNote(tId) {const t=upgradeSteps.find(t=>t.id===tId);if(t)t.notes=document.getElementById('modal-notes').value;saveData();closeNoteModal()};
+    document.getElementById('modal-attachment-input').addEventListener('change',async(e)=>{const titleEl=document.getElementById('modal-title');if(!titleEl)return; const title=titleEl.textContent.replace('หมายเหตุ: ','');const t=upgradeSteps.find(t=>t.title===title);if(!t)return;if(!t.attachments)t.attachments=[];for(const f of e.target.files){const r=new FileReader();const p=new Promise(res=>{r.onload=e=>res(e.target.result);r.readAsDataURL(f)});t.attachments.push(await p)}saveData();openNoteModal(t.id)});
+    
+    function renderVersionSelection(){const el=document.getElementById('version-selection-area');if(!el)return;el.innerHTML=versionDetailsData.map(v=>`<div class="bg-white p-4 rounded-lg shadow-sm border cursor-pointer hover:shadow-md transition-all duration-200" data-version-id="${v.id}" onclick="displayVersionDetails('${v.id}',this)"><h3 class="font-semibold">${v.name}</h3><p class="text-sm text-gray-600">${v.summary}</p></div>`).join('')}
+    
+    window.displayVersionDetails=(vId,el)=>{const d=document.getElementById('version-details-display');if(!d)return;document.querySelectorAll('[data-version-id]').forEach(c=>c.classList.remove('bg-blue-50','border-blue-500','shadow-lg'));if(el)el.classList.add('bg-blue-50','border-blue-500','shadow-lg');const v=versionDetailsData.find(v=>v.id===vId);if(v)d.innerHTML=`<h3 class="font-bold text-2xl mb-6 text-primary-blue">${v.name}</h3><div class="space-y-4">${v.details.map(i=>`<div class="flex items-start space-x-4"><div class="flex-shrink-0 w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mt-1"><svg class="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div><p class="text-gray-700">${i}</p></div>`).join('')}</div>`};
+    
+    function renderRisks(){const el=document.getElementById('risks-container');if(!el)return;el.innerHTML=risksData.map(r=>`<div class="p-6 rounded-lg bg-red-50 border border-red-200"><h3 class="text-xl font-semibold text-red-700 mb-3">${r.title}</h3><p class="mb-2"><strong>ผลกระทบ:</strong> ${r.description}</p><p><strong>การลดผลกระทบ:</strong> ${r.mitigation}</p></div>`).join('')}
+
+    // --- Event Listeners and Initialization ---
+    document.addEventListener('DOMContentLoaded', async () => {
+        
+        // --- Firebase Initialization ---
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-nam-plan';
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                console.log("User is signed in:", user.uid);
+                planDocRef = doc(db, "artifacts", appId, "public", "data", "project_plan");
+                
+                onSnapshot(planDocRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        upgradeSteps = docSnap.data().plan || JSON.parse(JSON.stringify(defaultUpgradeSteps));
+                    } else {
+                        // Document doesn't exist, create it with default data
+                        console.log("No such document! Creating with default data.");
+                        upgradeSteps = JSON.parse(JSON.stringify(defaultUpgradeSteps));
+                        setDoc(planDocRef, { plan: upgradeSteps });
+                    }
+                    dataLoaded = true;
+                    rerender();
+                });
+
+            } else {
+                console.log("User is signed out.");
+            }
+        });
+
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            try {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } catch (error) {
+                console.error("Error signing in with custom token:", error);
+                await signInAnonymously(auth);
+            }
+        } else {
+            await signInAnonymously(auth);
+        }
+
+        // --- UI Initialization ---
+        renderOtherSections();
+        
+        const revEl = document.getElementById('revision-date');
+        if(revEl) revEl.textContent = `(ปรับปรุงแผน ณ วันที่ ${new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })})`;
+        
+        document.getElementById('edit-mode-btn').addEventListener('click', window.toggleEditMode);
+        document.getElementById('add-task-btn').addEventListener('click', window.addTask);
+        document.getElementById('reset-btn').addEventListener('click', window.resetData);
+        
+        const tableBody = document.getElementById('progress-table-body');
+        sortableInstance = Sortable.create(tableBody, {
+            animation: 150, handle: '.drag-handle', ghostClass: 'sortable-ghost',
+            disabled: true,
+            onEnd: function (evt) {
+                const allRows = Array.from(tableBody.querySelectorAll('.task-row'));
+                const allIds = allRows.map(row => row.dataset.id);
+                upgradeSteps.sort((a,b) => allIds.indexOf(a.id) - allIds.indexOf(b.id));
+                upgradeSteps.forEach((t, index) => {
+                    t.order = index;
+                });
+                saveData();
+            },
+        });
+        const sections = document.querySelectorAll('section[id]'), navLinks = document.querySelectorAll('.nav-link');
+        const observer = new IntersectionObserver((e) => { e.forEach(entry => { if (entry.isIntersecting) { navLinks.forEach(l => { l.classList.remove('active'); if (l.getAttribute('href')==='#'+entry.target.id) l.classList.add('active'); }); } }); }, { threshold: 0.3 });
+        sections.forEach(s => observer.observe(s));
+    });
+</script>
+</body>
+</html>
+
