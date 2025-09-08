@@ -634,7 +634,7 @@
 
         onAuthStateChanged(auth, user => {
             if (user) {
-                planDocRef = doc(db, "artifacts", appId, "public", "data", "project_plan");
+                planDocRef = doc(db, "artifacts", appId, "public", "data", "plans", "project_plan");
                 
                 onSnapshot(planDocRef, (docSnap) => {
                     if (docSnap.exists()) {
