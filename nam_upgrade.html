@@ -634,7 +634,7 @@
 
         onAuthStateChanged(auth, user => {
             if (user) {
-                planDocRef = doc(db, "artifacts", appId, "public", "data", "plans", "project_plan");
+                planDocRef = doc(db, "artifacts", appId, "public/data/plans/project_plan");
                 
                 onSnapshot(planDocRef, (docSnap) => {
                     if (docSnap.exists()) {
@@ -649,6 +649,9 @@
                         isInitialized = true;
                     }
                     rerender();
+                }, (error) => {
+                    console.error("Firebase onSnapshot error:", error);
+                    document.getElementById('progress-table-body').innerHTML = `<tr><td colspan="8" class="text-center p-8 text-red-500">เกิดข้อผิดพลาดในการโหลดข้อมูล: ${error.message}</td></tr>`;
                 });
 
             }
