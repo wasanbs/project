@@ -207,6 +207,7 @@
 
     <footer class="bg-gray-800 text-white mt-20">
         <div class="container mx-auto px-6 py-8 text-center text-sm">
+             <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAC0CAMAAAChTRXeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAPUExURf///zg3fTg3fTg3fTg3fX8tEyQAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHOSURBVHja7d3bcoMwEAVQG0Tj/V+2G5m1y6EJKVXfaeJ8aJLQJgAAYL483t/f2+V6v31eP1+vNyMAAFgs/T6fr5fN5XJ5uVy28/Pz+mU0Gg0AAMB8yGazMAwDAAAAeIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAA+A+TP/8F4g0v368wAAAABJRU5ErkJggg==" alt="Busisoft Logo" class="h-10 mx-auto mb-4">
              <p>โครงการบริการบำรุงรักษาระบบบริหารจัดการการเข้าถึงระบบสารสนเทศ ปณท (IDM)</p>
              <p>Prepared by: Wasan | For inquiries, please contact: wasan@busisoft.co.th</p>
              <p>Last update | วันที่: 20 มิถุนายน 2568</p>
@@ -222,21 +223,11 @@
         </div>
     </div>
 <script type="module">
-    // --- Firebase and Core App Dependencies ---
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, onSnapshot, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
     // --- State & Data Definitions ---
     let isEditMode = false;
     let sortableInstance = null, upgradeSteps = [];
     let expandedTasks = new Set(['step-2-main', 'step-4-main', 'step-6-main', 'step-8-main']);
     
-    // Firebase related variables
-    let db, auth, planDocRef;
-    let dataLoaded = false;
-
-
     const defaultUpgradeSteps = [
         { "id": "step-aa", "parentId": null, "title": "ติดตั้งและปรับแต่ง NetIQ (AA)", "description": "ดำเนินการติดตั้งและปรับแต่ง NetIQ Advanced Authentication", "startDate": "2025-05-01", "endDate": "2025-05-20", "status": "Completed", "assignee": "Busisoft", "order": 1 },
         
@@ -268,24 +259,46 @@
 
     // --- Data Persistence & Export ---
     async function saveData() { 
-        if (!planDocRef) return;
+        // Save to a server endpoint
         try {
-            await setDoc(planDocRef, { plan: upgradeSteps });
+            const response = await fetch('./save-plan.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(upgradeSteps, null, 2)
+            });
+            if (!response.ok) {
+                console.error('Failed to save data to server.');
+                // Fallback to local storage if server save fails
+                localStorage.setItem('netiqUpgradePlan_v16', JSON.stringify(upgradeSteps));
+            }
         } catch (error) {
-            console.error("Error saving data to Firestore:", error);
+            console.error('Error saving data to server. Saving to local storage instead.', error);
+            // Fallback to local storage on network error
+            localStorage.setItem('netiqUpgradePlan_v16', JSON.stringify(upgradeSteps));
         }
     }
-    
+
+    async function loadData() { 
+        try { 
+            const response = await fetch('./netiq_upgrade_plan_data.json?v=' + Date.now()); // Prevent caching
+            if (response.ok) {
+                const data = await response.json();
+                upgradeSteps = data;
+            } else {
+                 throw new Error('Server responded with a non-200 status');
+            }
+        } catch (e) { 
+            console.warn('Could not load from server, falling back to default data.', e);
+            upgradeSteps = JSON.parse(JSON.stringify(defaultUpgradeSteps)); 
+        } 
+        checkAndUpdateStatuses();
+    }
+
     window.downloadDataAsJson = () => { try { const d=JSON.stringify(upgradeSteps,null,2); const b=new Blob([d],{type:"application/json"}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download='netiq_plan.json'; a.click(); URL.revokeObjectURL(u); } catch (e) { alert("Error."); } }
     window.downloadDataAsExcel = () => { try { const data=[]; const h=["ลำดับ","ขั้นตอน","รายละเอียด","ผู้รับผิดชอบ","เริ่ม","สิ้นสุด","สถานะ"]; const tree=buildTaskTree(); let c=1; function p(tasks,pfix='') { tasks.sort((a,b)=>a.order-b.order).forEach((t,i)=>{ data.push([pfix?`${pfix}.${i+1}`:c++,t.title,t.description,t.assignee,formatDate(t.startDate),formatDate(t.endDate),t.status]); if(t.children.length>0){p(t.children,pfix?`${pfix}.${i+1}`:`${c-1}`);}}); } p(tree); const ws=XLSX.utils.aoa_to_sheet([h,...data]); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"Plan"); XLSX.writeFile(wb,"netiq_plan.xlsx"); } catch (e) { alert("Error."); } }
 
     // --- Core Application Logic ---
-    const rerender = () => { 
-        if(dataLoaded) {
-            renderProgressTable(); 
-            renderProjectTimeline(); 
-        }
-    };
+    const rerender = () => { renderProgressTable(); renderProjectTimeline(); };
     const formatDate = (d) => { if(!d) return ''; try { const dt=new Date(d); return `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()}`; } catch (e) { return ''; } };
     
     function checkAndUpdateStatuses() {
@@ -306,14 +319,14 @@
         }
     }
 
-    window.updateTaskData = (tId, f, v) => { const t = upgradeSteps.find(t => t.id === tId); if (t) { t[f] = v; saveData(); /* No rerender needed, onSnapshot will handle it */ } };
+    window.updateTaskData = (tId, f, v) => { const t = upgradeSteps.find(t => t.id === tId); if (t) { t[f] = v; saveData(); rerender(); } };
     const buildTaskTree = () => { const map=new Map(upgradeSteps.map(t => [t.id,{...t,children:[]}])); const tree=[]; for(const t of map.values()){ if(t.parentId&&map.has(t.parentId)){map.get(t.parentId).children.push(t);} else {tree.push(t);}} return tree; };
 
     // --- Edit Mode & Task Management ---
     window.toggleEditMode = () => { 
         if (!isEditMode) {
             const password = prompt("กรุณาใส่รหัสผ่านเพื่อแก้ไข:");
-            if (btoa(password) !== "YWJjMTIzNA==") { // "abc1234" in Base64
+            if (btoa(password) !== "YWJjMTIz") {
                 alert("รหัสผ่านไม่ถูกต้อง!");
                 return;
             }
@@ -334,10 +347,10 @@
         rerender(); 
     };
 
-    window.resetData = () => { if(confirm('คุณต้องการรีเซ็ตข้อมูลทั้งหมดกลับเป็นค่าเริ่มต้นหรือไม่? ข้อมูลที่แก้ไขจะหายไปทั้งหมด')) { upgradeSteps = JSON.parse(JSON.stringify(defaultUpgradeSteps)); saveData(); } };
-    window.addTask = () => { const t={id:`t_${Date.now()}`,parentId:null,title:"New Task",description:"",order:upgradeSteps.length,status:"Not Started",assignee:"",startDate:"",endDate:"",notes:"",attachments:[]}; upgradeSteps.push(t); saveData(); };
-    window.addSubTask = (pId) => { const p=upgradeSteps.find(t=>t.id===pId); if(!p)return; const st={id:`t_${Date.now()}`,parentId:pId,title:"New Sub-Task",description:"",order:p.order+(buildTaskTree().find(t=>t.id===pId).children.length+1)*0.1,status:"Not Started",assignee:"",startDate:"",endDate:"",notes:"",attachments:[]}; upgradeSteps.push(st); expandedTasks.add(pId); saveData(); };
-    window.deleteTask = (tId) => { if(confirm('ต้องการลบ Task นี้และ Task ย่อยทั้งหมด?')){ const ids=new Set([tId]); upgradeSteps.filter(t=>t.parentId===tId).forEach(t=>ids.add(t.id)); upgradeSteps=upgradeSteps.filter(t=>!ids.has(t.id)); saveData();} };
+    window.resetData = () => { if(confirm('คุณต้องการรีเซ็ตข้อมูลทั้งหมดกลับเป็นค่าเริ่มต้นหรือไม่? ข้อมูลที่แก้ไขจะหายไปทั้งหมด')) { upgradeSteps = JSON.parse(JSON.stringify(defaultUpgradeSteps)); saveData(); rerender(); } };
+    window.addTask = () => { const t={id:`t_${Date.now()}`,parentId:null,title:"New Task",description:"",order:upgradeSteps.length,status:"Not Started",assignee:"",startDate:"",endDate:"",notes:"",attachments:[]}; upgradeSteps.push(t); rerender(); saveData(); };
+    window.addSubTask = (pId) => { const p=upgradeSteps.find(t=>t.id===pId); if(!p)return; const st={id:`t_${Date.now()}`,parentId:pId,title:"New Sub-Task",description:"",order:p.order+(buildTaskTree().find(t=>t.id===pId).children.length+1)*0.1,status:"Not Started",assignee:"",startDate:"",endDate:"",notes:"",attachments:[]}; upgradeSteps.push(st); expandedTasks.add(pId); rerender(); saveData(); };
+    window.deleteTask = (tId) => { if(confirm('ต้องการลบ Task นี้และ Task ย่อยทั้งหมด?')){ const ids=new Set([tId]); upgradeSteps.filter(t=>t.parentId===tId).forEach(t=>ids.add(t.id)); upgradeSteps=upgradeSteps.filter(t=>!ids.has(t.id)); rerender(); saveData();} };
     window.toggleSubtasks = (tId) => { expandedTasks.has(tId)?expandedTasks.delete(tId):expandedTasks.add(tId); rerender(); };
 
     // --- UI Rendering ---
@@ -626,51 +639,10 @@
     
     function renderRisks(){const el=document.getElementById('risks-container');if(!el)return;el.innerHTML=risksData.map(r=>`<div class="p-6 rounded-lg bg-red-50 border border-red-200"><h3 class="text-xl font-semibold text-red-700 mb-3">${r.title}</h3><p class="mb-2"><strong>ผลกระทบ:</strong> ${r.description}</p><p><strong>การลดผลกระทบ:</strong> ${r.mitigation}</p></div>`).join('')}
 
-    // --- Event Listeners and Initialization ---
+    // --- Event Listeners ---
     document.addEventListener('DOMContentLoaded', async () => {
-        
-        // --- Firebase Initialization ---
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-nam-plan';
-        const app = initializeApp(firebaseConfig);
-        db = getFirestore(app);
-        auth = getAuth(app);
-
-        onAuthStateChanged(auth, user => {
-            if (user) {
-                console.log("User is signed in:", user.uid);
-                planDocRef = doc(db, "artifacts", appId, "public", "data", "project_plan");
-                
-                onSnapshot(planDocRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        upgradeSteps = docSnap.data().plan || JSON.parse(JSON.stringify(defaultUpgradeSteps));
-                    } else {
-                        // Document doesn't exist, create it with default data
-                        console.log("No such document! Creating with default data.");
-                        upgradeSteps = JSON.parse(JSON.stringify(defaultUpgradeSteps));
-                        setDoc(planDocRef, { plan: upgradeSteps });
-                    }
-                    dataLoaded = true;
-                    rerender();
-                });
-
-            } else {
-                console.log("User is signed out.");
-            }
-        });
-
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            try {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } catch (error) {
-                console.error("Error signing in with custom token:", error);
-                await signInAnonymously(auth);
-            }
-        } else {
-            await signInAnonymously(auth);
-        }
-
-        // --- UI Initialization ---
+        await loadData();
+        rerender();
         renderOtherSections();
         
         const revEl = document.getElementById('revision-date');
@@ -692,6 +664,7 @@
                     t.order = index;
                 });
                 saveData();
+                rerender();
             },
         });
         const sections = document.querySelectorAll('section[id]'), navLinks = document.querySelectorAll('.nav-link');
@@ -701,3 +674,4 @@
 </script>
 </body>
 </html>
+
