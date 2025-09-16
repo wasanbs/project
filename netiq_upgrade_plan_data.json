@@ -1,97 +1,132 @@
 [
-    {
-      "id": "step-aa",
-      "title": "ติดตั้งและปรับแต่ง NetIQ (AA)",
-      "description": "ดำเนินการติดตั้งและปรับแต่ง NetIQ Advanced Authentication เพื่อรองรับการยืนยันตัวตนแบบ MFA และ Adaptive Authentication",
-      "version": "AA",
-      "startDate": "2025-05-01",
-      "endDate": "2025-05-20",
-      "status": "Completed",
-      "assignee": "Busisoft",
-      "order": 0
-    },
-    {
-      "id": "step-1",
-      "title": "Clone ระบบ NAM ทั้งหมด",
-      "description": "สร้างสำเนาของระบบ NAM ปัจจุบัน (v4.5.3) ไปยังสภาพแวดล้อมทดสอบที่แยกออกมา เพื่อให้เราอัปเกรดและทดสอบได้อย่างปลอดภัย ไม่กระทบการทำงานปกติ",
-      "version": "v4.5.3",
-      "startDate": "2025-09-08",
-      "endDate": "2025-09-21",
-      "status": "Not Started",
-      "assignee": "THP",
-      "order": 1
-    },
-    {
-      "id": "step-2",
-      "title": "อัปเกรด NAM เป็น v4.5.5",
-      "description": "อัปเกรด NAM ในระบบแยกเป็น v4.5.5 เพื่อปรับปรุงส่วนประกอบพื้นฐานและแก้ไขปัญหาด้านความปลอดภัยบางประการ",
-      "details": [
-        "อัปเดต Tomcat 8.5.72, OpenSSL 1.0.2za, Apache 2.4.51",
-        "แก้ไขปัญหาความปลอดภัยเกี่ยวกับอักขระพิเศษและ SAML"
-      ],
-      "version": "v4.5.5",
-      "startDate": "2025-09-22",
-      "endDate": "2025-10-05",
-      "status": "Not Started",
-      "assignee": "Busisoft",
-      "order": 2
-    },
-    {
-      "id": "step-3",
-      "title": "อัปเกรด SUSE Linux เป็น 12 SP5",
-      "description": "การอัปเกรดระบบปฏิบัติการ SUSE Linux เป็น 12 SP5 เป็นสิ่งจำเป็นก่อนอัปเกรด NAM ไป v5.x เพื่อให้ระบบเข้ากันได้ดีและทำงานได้ราบรื่น",
-      "details": [
-        "เป็นข้อกำหนดสำคัญ (Prerequisite) สำหรับ NAM v5.x",
-        "ป้องกันปัญหาทางเทคนิคและความเข้ากันได้ของระบบ"
-      ],
-      "version": "SUSE Linux 12 SP5",
-      "startDate": "2025-10-06",
-      "endDate": "2025-10-19",
-      "status": "Not Started",
-      "assignee": "Busisoft",
-      "order": 3
-    },
-    {
-      "id": "step-4",
-      "title": "อัปเกรด NAM เป็น v5.0.3",
-      "description": "อัปเกรด NAM ในระบบแยกเป็น v5.0.3 ซึ่งมาพร้อมคุณสมบัติใหม่และการแก้ไขช่องโหว่ที่สำคัญ",
-      "details": [
-        "รองรับ Kerberos Privileged Attribute Certificate (PAC)",
-        "แก้ไขช่องโหว่ร้ายแรง Log4j และ Multiple XSS (CVE-2022-26325)",
-        "อัปเดต Tomcat 9.0.65, Apache 2.4.54"
-      ],
-      "version": "v5.0.3",
-      "startDate": "2025-10-20",
-      "endDate": "2025-11-02",
-      "status": "Not Started",
-      "assignee": "Busisoft",
-      "order": 4
-    },
-    {
-      "id": "step-5",
-      "title": "อัปเกรด NAM เป็น v5.1",
-      "description": "อัปเกรดสู่เวอร์ชันเป้าหมาย v5.1 ที่มีการปรับปรุงครั้งใหญ่ด้านการจัดการและความปลอดภัย",
-      "details": [
-        "หน้าจอจัดการใหม่ (Enhanced Administration Console) บน Angular UI",
-        "ปรับปรุง REST APIs สำหรับการทำงานอัตโนมัติ",
-        "แก้ไขช่องโหว่ Directory traversal, User impersonation และ Multiple XSS"
-      ],
-      "version": "v5.1",
-      "startDate": "2025-11-03",
-      "endDate": "2025-11-16",
-      "status": "Not Started",
-      "assignee": "Busisoft",
-      "order": 5
-    },
-    {
-      "id": "step-6",
-      "title": "ตรวจสอบและทดสอบระบบ",
-      "description": "ตรวจสอบและทดสอบระบบ NAM ที่อัปเกรดแล้วอย่างละเอียดในระบบแยก เพื่อให้แน่ใจว่าทุกอย่างทำงานถูกต้องและเสถียร ก่อนที่จะนำไปใช้งานจริง",
-      "version": "v5.1",
-      "startDate": "2025-11-17",
-      "endDate": "2025-11-30",
-      "status": "Not Started",
-      "assignee": "Busisoft",
-      "order": 6
-    }
+  {
+    "id": "step-aa",
+    "parentId": null,
+    "title": "ติดตั้งและปรับแต่ง NetIQ (AA)",
+    "description": "ดำเนินการติดตั้งและปรับแต่ง NetIQ Advanced Authentication",
+    "startDate": "2025-05-01",
+    "endDate": "2025-05-20",
+    "status": "Completed",
+    "assignee": "Busisoft",
+    "order": 1,
+    "notes": "",
+    "attachments": []
+  },
+  {
+    "id": "step-2-main",
+    "parentId": null,
+    "title": "อัปเกรด NAM (v4.5.3 -> v4.5.5) (Production)",
+    "description": "ดำเนินการอัปเกรด NAM บนระบบจริงเป็นเวอร์ชัน 4.5.5",
+    "startDate": "2025-09-27",
+    "endDate": "2025-09-28",
+    "status": "Not Started",
+    "assignee": "Busisoft",
+    "order": 2,
+    "notes": "",
+    "attachments": []
+  },
+  {
+    "id": "step-3-sub",
+    "parentId": "step-2-main",
+    "title": "ติดตามผล NAM v4.5.5",
+    "description": "ตรวจสอบและติดตามผลการทำงานของระบบเป็นเวลา 1 สัปดาห์",
+    "startDate": "",
+    "endDate": "",
+    "status": "Not Started",
+    "assignee": "Busisoft/THP",
+    "order": 3,
+    "notes": "",
+    "attachments": []
+  },
+  {
+    "id": "step-4-main",
+    "parentId": null,
+    "title": "อัปเกรด SUSE Linux (12 SP4 -> 12 SP5) (Production)",
+    "description": "ดำเนินการอัปเกรดระบบปฏิบัติการ SUSE Linux บนระบบจริง",
+    "startDate": "",
+    "endDate": "",
+    "status": "Not Started",
+    "assignee": "Busisoft",
+    "order": 4,
+    "notes": "",
+    "attachments": []
+  },
+  {
+    "id": "step-5-sub",
+    "parentId": "step-4-main",
+    "title": "ติดตามผล SUSE Linux 12 SP5",
+    "description": "ตรวจสอบและติดตามผลการทำงานของระบบเป็นเวลา 1 สัปดาห์",
+    "startDate": "",
+    "endDate": "",
+    "status": "Not Started",
+    "assignee": "Busisoft/THP",
+    "order": 5,
+    "notes": "",
+    "attachments": []
+  },
+  {
+    "id": "step-6-main",
+    "parentId": null,
+    "title": "อัปเกรด NAM (v4.5.5 -> v5.0.3) (Production)",
+    "description": "ดำเนินการอัปเกรด NAM บนระบบจริงเป็นเวอร์ชัน 5.0.3",
+    "startDate": "",
+    "endDate": "",
+    "status": "Not Started",
+    "assignee": "Busisoft",
+    "order": 6,
+    "notes": "",
+    "attachments": []
+  },
+  {
+    "id": "step-7-sub",
+    "parentId": "step-6-main",
+    "title": "ติดตามผล NAM v5.0.3",
+    "description": "ตรวจสอบและติดตามผลการทำงานของระบบเป็นเวลา 1 สัปดาห์",
+    "startDate": "",
+    "endDate": "",
+    "status": "Not Started",
+    "assignee": "Busisoft/THP",
+    "order": 7,
+    "notes": "",
+    "attachments": []
+  },
+  {
+    "id": "step-8-main",
+    "parentId": null,
+    "title": "อัปเกรด NAM (v5.0.3 -> v5.1) (Production)",
+    "description": "ดำเนินการอัปเกรด NAM บนระบบจริงเป็นเวอร์ชันเป้าหมาย 5.1",
+    "startDate": "",
+    "endDate": "",
+    "status": "Not Started",
+    "assignee": "Busisoft",
+    "order": 8,
+    "notes": "",
+    "attachments": []
+  },
+  {
+    "id": "step-9-sub",
+    "parentId": "step-8-main",
+    "title": "ติดตามผล NAM v5.1",
+    "description": "ตรวจสอบและติดตามผลการทำงานของระบบเป็นเวลา 1 สัปดาห์",
+    "startDate": "",
+    "endDate": "",
+    "status": "Not Started",
+    "assignee": "Busisoft/THP",
+    "order": 9,
+    "notes": "",
+    "attachments": []
+  },
+  {
+    "id": "step-10",
+    "parentId": null,
+    "title": "สรุปและส่งมอบโครงการ",
+    "description": "รวบรวมข้อมูล สรุปผลการดำเนินงาน และส่งมอบโครงการ",
+    "startDate": "",
+    "endDate": "",
+    "status": "Not Started",
+    "assignee": "Busisoft",
+    "order": 10,
+    "notes": "",
+    "attachments": []
+  }
 ]
