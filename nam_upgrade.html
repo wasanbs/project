@@ -14,6 +14,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f8fbff; color: #3f3f46; }
+        /* Responsive tweaks for mobile */
+        @media (max-width: 640px) {
+            .container, .mx-auto, .px-6 { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
+            .text-4xl { font-size: 1.6rem !important; }
+            .text-3xl { font-size: 1.2rem !important; }
+            .text-2xl { font-size: 1rem !important; }
+            .rounded-xl, .rounded-lg { border-radius: 0.5rem !important; }
+            .p-8, .p-6 { padding: 1rem !important; }
+            .mb-16, .mb-20 { margin-bottom: 1.5rem !important; }
+            .pt-16, .-mt-16 { padding-top: 1rem !important; margin-top: -1rem !important; }
+            .flex, .items-center, .justify-center { flex-direction: column !important; align-items: stretch !important; }
+            .grid, .md\:grid-cols-2, .lg\:grid-cols-2, .lg\:grid-cols-3 { grid-template-columns: 1fr !important; }
+            .overflow-x-auto { overflow-x: scroll !important; }
+            .responsive-table th, .responsive-table td { font-size: 0.85rem !important; padding: 0.3rem !important; }
+            .h-10 { height: 2rem !important; }
+        }
         .bg-primary-blue { background-color: #0D94E8; }
         .text-primary-blue { color: #0D94E8; }
         .nav-link { transition: color 0.3s, border-bottom-color 0.3s; font-weight: 600; }
@@ -27,7 +43,6 @@
         #note-modal > div { transition: transform 0.3s ease; }
         .task-row.has-children { border-left: 3px solid #90caf9; }
         .sub-task-row { background-color: #f9fafb; border-left: 3px solid #e0e0e0; }
-        .sub-task-row td { color: #4b5563; }
         .status-select-completed { background-color: #f0fdf4 !important; border-color: #a7f3d0 !important; color: #065f46 !important; font-weight: 600; }
         .status-select-inprogress { background-color: #eff6ff !important; border-color: #bfdbfe !important; color: #312e81 !important; font-weight: 600; }
         .responsive-table { table-layout: fixed; width: 100%; border-collapse: collapse; }
@@ -44,10 +59,32 @@
         .toggle-subtask.collapsed { transform: rotate(-90deg); }
         .table-header-custom th { background-color: #E3F2FD; font-weight: 700; color: #1f2937; }
         .revise-badge { display: inline-block; background-color: #fefce8; color: #854d0e; font-size: 0.8rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 9999px; vertical-align: middle; margin-left: 0.75rem; border: 1px solid #fde047; }
+        
+        .connection-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: .5rem; transition: background-color 0.3s; }
+        .dot-connected { background-color: #22c55e; }
+        .dot-disconnected { background-color: #ef4444; }
+        .dot-saving { background-color: #f97316; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: .5rem; }
-        #db-status.status-connected { background-color: #ecfdf5; color: #065f46; }
-        #db-status.status-disconnected { background-color: #fef2f2; color: #991b1b; }
+        
         .edit-controls-container { transition: all 0.3s ease-in-out; }
+
+        .section-title-wrapper { position: relative; }
+        .section-drag-handle, .section-delete-btn {
+            display: none;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            padding: 8px;
+            border-radius: 9999px;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .is-editable .section-drag-handle, .is-editable .section-delete-btn { display: block; }
+        .section-drag-handle { left: -48px; cursor: grab; }
+        .section-drag-handle:hover { background-color: #f3f4f6; color: #1f2937; }
+        .section-delete-btn { right: -48px; cursor: pointer; }
+        .section-delete-btn:hover { background-color: #fee2e2; color: #b91c1c; }
     </style>
 </head>
 <body class="antialiased">
@@ -55,15 +92,12 @@
     <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-40 shadow-sm">
         <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
             <div class="flex items-center gap-4">
-                <div class="text-xl font-bold text-primary-blue">
-                    ไปรษณีย์ไทย
-                </div>
-                <div id="db-status" class="text-xs font-semibold px-2 py-1 rounded"></div>
+                <div class="text-xl font-bold text-primary-blue">ไปรษณีย์ไทย</div>
+                <div id="db-status" class="text-xs font-semibold px-2 py-1 rounded flex items-center"></div>
             </div>
             
             <div id="nav-links-container" class="flex items-center gap-8">
-                <!-- Nav links will be inserted here by JS -->
-            </div>
+                </div>
         </nav>
     </header>
 
@@ -88,16 +122,20 @@
 
     <main id="main-container" class="container mx-auto px-6 py-8 md:py-12">
         <section data-section-id="title" id="title" class="text-center mb-16">
-            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4 flex items-center justify-center">
-                แผนอัปเกรดระบบ NetIQ Access Manager (NAM) <span class="revise-badge">Revise</span>
-            </h1>
-            <p class="text-lg text-gray-600 max-w-3xl mx-auto" data-editable-key="main.subtitle">
+            <div class="section-title-wrapper">
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4 flex items-center justify-center">
+                    แผนอัปเกรดระบบ NetIQ Access Manager (NAM) <span class="revise-badge">Revise</span>
+                </h1>
+            </div>
+            <p class="text-lg text-gray-600 max-w-3xl mx-auto" data-editable-container="main.subtitle">
                 <br><span class="text-sm text-gray-500" id="revision-date"></span>
             </p>
         </section>
 
         <section data-section-id="overview" id="overview" class="mb-20 pt-16 -mt-16">
-             <h2 class="text-3xl font-bold text-center mb-12 section-drag-handle">ภาพรวมโครงการ</h2>
+             <div class="section-title-wrapper mb-12">
+                <h2 class="text-3xl font-bold text-center">ภาพรวมโครงการ</h2>
+             </div>
             <div class="grid md:grid-cols-2 gap-8 items-center">
                 <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
                     <h3 class="text-2xl font-semibold mb-4 text-gray-700">สถานะปัจจุบันของระบบ</h3>
@@ -108,13 +146,15 @@
                     <ul id="overview-target" class="space-y-3"></ul>
                 </div>
             </div>
-             <p class="text-center mt-8 text-gray-600" data-editable-key="overview.summary"></p>
+             <p class="text-center mt-8 text-gray-600" data-editable-container="overview.summary"></p>
         </section>
 
         <section data-section-id="progress" id="progress" class="mb-20 pt-16 -mt-16">
-            <h2 class="text-3xl font-bold text-center mb-12 section-drag-handle">การติดตามความคืบหน้าแผนการอัปเกรด</h2>
+            <div class="section-title-wrapper mb-12">
+                <h2 class="text-3xl font-bold text-center">การติดตามความคืบหน้าแผนการอัปเกรด</h2>
+            </div>
             <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6 overflow-x-auto">
-                <table class="responsive-table">
+                <table class="responsive-table hidden sm:table">
                     <thead class="table-header-custom">
                         <tr>
                             <th class="py-3 px-2 text-left text-xs uppercase tracking-wider col-drag"></th>
@@ -129,6 +169,7 @@
                     </thead>
                     <tbody id="progress-table-body" class="bg-white"></tbody>
                 </table>
+                <div id="progress-card-list" class="block sm:hidden"></div>
             </div>
             
             <h3 class="text-2xl font-bold text-center mt-12 mb-8 border-t pt-8">แผนภาพ Timeline โครงการ</h3>
@@ -136,8 +177,10 @@
         </section>
         
         <section data-section-id="improvements" id="improvements" class="mb-20 pt-16 -mt-16">
-            <h2 class="text-3xl font-bold text-center mb-4 section-drag-handle">การปรับปรุงที่สำคัญ</h2>
-             <p class="text-center max-w-2xl mx-auto mb-12 text-gray-600" data-editable-key="improvements.subtitle"></p>
+            <div class="section-title-wrapper mb-4">
+                <h2 class="text-3xl font-bold text-center">การปรับปรุงที่สำคัญ</h2>
+            </div>
+             <p class="text-center max-w-2xl mx-auto mb-12 text-gray-600" data-editable-container="improvements.subtitle"></p>
             <div class="grid lg:grid-cols-2 gap-8 items-center">
                 <div class="chart-container h-80"><canvas id="improvementsChart"></canvas></div>
                 <div id="improvements-details" class="bg-white p-6 rounded-lg shadow-md border min-h-[300px]"></div>
@@ -145,23 +188,31 @@
         </section>
 
         <section data-section-id="version-details" id="version-details" class="mb-20 pt-16 -mt-16">
-            <h2 class="text-3xl font-bold text-center mb-12 section-drag-handle">รายละเอียดเวอร์ชันระบบ</h2>
+            <div class="section-title-wrapper mb-12">
+                <h2 class="text-3xl font-bold text-center">รายละเอียดเวอร์ชันระบบ</h2>
+            </div>
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8" id="version-selection-area"></div>
             <div class="bg-white p-8 rounded-lg shadow-md border min-h-[300px]" id="version-details-display"></div>
         </section>
         
         <section data-section-id="benefits" id="benefits" class="mb-20 pt-16 -mt-16">
-            <h2 class="text-3xl font-bold text-center mb-12 section-drag-handle">ประโยชน์ที่คาดว่าจะได้รับ</h2>
+            <div class="section-title-wrapper mb-12">
+                <h2 class="text-3xl font-bold text-center">ประโยชน์ที่คาดว่าจะได้รับ</h2>
+            </div>
             <div id="benefits-container" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
         </section>
 
         <section data-section-id="risks" id="risks" class="mb-20 pt-16 -mt-16">
-             <h2 class="text-3xl font-bold text-center mb-12 section-drag-handle">ผลกระทบและความเสี่ยงที่อาจเกิดขึ้น</h2>
+             <div class="section-title-wrapper mb-12">
+                <h2 class="text-3xl font-bold text-center">ผลกระทบและความเสี่ยงที่อาจเกิดขึ้น</h2>
+             </div>
             <div id="risks-container" class="max-w-4xl mx-auto space-y-6"></div>
         </section>
         
         <section data-section-id="approval" id="approval" class="pt-16 -mt-16">
-             <h2 class="text-3xl font-bold text-center mb-12 section-drag-handle">ข้อแนะนำและการอนุมัติ</h2>
+             <div class="section-title-wrapper mb-12">
+                <h2 class="text-3xl font-bold text-center">ข้อแนะนำและการอนุมัติ</h2>
+             </div>
             <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-lg border border-gray-100">
                 <h3 class="text-2xl font-semibold mb-6">ข้อแนะนำเพื่อความสำเร็จของโครงการ</h3>
                 <div id="recommendations-container" class="space-y-4"></div>
@@ -178,8 +229,11 @@
     </main>
 
     <footer class="bg-gray-800 text-white mt-20">
+       
         <div class="container mx-auto px-6 py-8 text-center text-sm">
-             <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAC0CAMAAAChTRXeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAPUExURf///zg3fTg3fTg3fTg3fX8tEyQAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHOSURBVHja7d3bcoMwEAVQG0Tj/V+2G5m1y6EJKVXfaeJ8aJLQJgAAYL483t/f2+V6v31eP1+vNyMAAFgs/T6fr5fN5XJ5uVy28/Pz+mU0Gg0AAMB8yGazMAwDAAAAeIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAAsIBJAgCwAEkCALCASQIAcIAlCQAA+A+TP/8F4g0v368wAAAABJRU5ErkJggg==" alt="Busisoft Logo" class="h-10 mx-auto mb-4">
+             <div class="w-full flex justify-center items-center py-4">
+            <img src="https://busisoft.co.th/wp-content/uploads/2020/11/logo.png" alt="Busisoft Logo" style="height:48px;max-width:90vw;width:auto;object-fit:contain;" />
+        </div>
              <p>โครงการบริการบำรุงรักษาระบบบริหารจัดการการเข้าถึงระบบสารสนเทศ ปณท (IDM)</p>
              <p>Prepared by: Wasan | For inquiries, please contact: wasan@busisoft.co.th</p>
              <p>Last update | วันที่: 20 มิถุนายน 2568</p>
@@ -207,6 +261,7 @@
     let undoState = {};
     let expandedTasks = new Set(['step-2-main', 'step-4-main', 'step-6-main', 'step-8-main']);
     let improvementsChart = null;
+    let activeVersionButton = null;
 
     // --- Firebase Configuration ---
     const firebaseConfig = {
@@ -243,7 +298,7 @@
                 "<strong>การบูรณาการ:</strong> เพิ่ม NetIQ Advanced Authentication (AA) สำหรับ MFA และ Adaptive Authentication",
                 "<strong>ผลลัพธ์:</strong> ระบบที่ปลอดภัย ทันสมัย เสถียร และพร้อมสำหรับอนาคต"
             ],
-            summary: "โครงการนี้มีเป้าหมายเพื่อทำให้ระบบจัดการการเข้าถึง (NAM) ของไปรษณีย์ไทยทันสมัยขึ้น เพื่อให้ระบบมีความปลอดภัยและทำงานได้ดียิ่งขึ้น นอกจากนี้ เราจะเพิ่ม NetIQ Advanced Authentication (AA) เข้ามา เพื่อเสริมความปลอดภัยในการยืนยันตัวตนให้มีหลายชั้น (MFA) และสามารถปรับระดับความปลอดภัยตามความเสี่ยงได้"
+            summary: "โครงการนี้มีเป้าหมายเพื่อทำให้ระบบจัดการการเข้าถึง (NAM) ของไปรษณีย์ไทยทันสมัยขึ้น เพื่อให้ระบบมีความปลอดภัยและทำงานได้ดียิ่งขึ้น นอกจากนี้ เราจะเพิ่ม NetIQ Advanced Authentication (AA) เข้ามา เพื่อเสริมความปลอดภัยในการยืนันตัวตนให้มีหลายชั้น (MFA) และสามารถปรับระดับความปลอดภัยตามความเสี่ยงได้"
         },
          improvements: {
             subtitle: "การอัปเกรดครั้งนี้มุ่งเน้นการพัฒนาใน 3 ด้านหลัก คลิกที่ส่วนของแผนภูมิเพื่อดูรายละเอียด",
@@ -257,6 +312,13 @@
                 { title: 'ด้านคุณสมบัติใหม่ (New Features)', content: 'เวอร์ชันใหม่มาพร้อมเครื่องมือที่ช่วยให้ผู้ดูแลระบบทำงานได้ง่ายขึ้น และรองรับการทำงานอัตโนมัติเพื่อลดภาระงานที่ต้องทำซ้ำๆ', list: ['<strong>หน้าจอจัดการใหม่ (Angular UI):</strong> ทันสมัย ใช้งานง่าย และตอบสนองได้ดีกว่าเดิม', '<strong>ปรับปรุง REST APIs:</strong> เพิ่มความสามารถในการทำงานอัตโนมัติ (Automation) และการเชื่อมต่อกับระบบอื่นๆ', '<strong>รองรับมาตรฐานใหม่:</strong> เข้ากันได้กับแอปพลิเคชันยุคใหม่ที่ใช้ OpenID Connect/OAuth 2.0'] }
             ]
         },
+        versionDetails: [ 
+            { "id": "aa", "name": "NetIQ Advanced Authentication (AA)", "summary": "NetIQ Advanced Authentication (AA) ได้รับการติดตั้งและปรับแต่งเพื่อเพิ่มความสามารถในการยืนันตัวตนขั้นสูง", "details": [ "รองรับ Multi-Factor Authentication (MFA) หลากหลายรูปแบบ เช่น รหัสผ่านครั้งเดียว (OTP), Biometrics (ลายนิ้วมือ, ใบหน้า), Push Notifications", "เพิ่ม Adaptive Authentication Policy: สามารถกำหนดนโยบายความปลอดภัยที่ปรับเปลี่ยนได้ตามบริบทการเข้าถึง (เช่น ตำแหน่งที่ตั้ง, อุปกรณ์ที่ใช้, พฤติกรรมการเข้าสู่ระบบ) เพื่อเพิ่มความปลอดภัยโดยไม่กระทบประสบการณ์ผู้ใช้มากเกินไป", "ลดความเสี่ยงจากการเข้าถึงโดยไม่ได้รับอนุญาต: ด้วยการยืนันตัวตนที่แข็งแกร่งขึ้น ช่วยป้องกันการโจมตีแบบ Phishing, Credential Stuffing และ Brute-force Attacks", "ปรับปรุงประสบการณ์ผู้ใช้: ด้วยการรวมวิธีการยืนันตัวตนที่หลากหลายและยืดหยุ่น ทำให้ผู้ใช้สามารถเข้าถึงระบบได้อย่างปลอดภัยและสะดวกสบายยิ่งขึ้น", "รองรับมาตรฐานความปลอดภัยล่าสุด: ช่วยให้องค์กรปฏิบัติตามข้อกำหนดด้าน Regulatory Compliance และมาตรฐานความปลอดภัยข้อมูลที่เข้มงวดขึ้น" ] }, 
+            { "id": "v4.5.3", "name": "NetIQ Access Manager 4.5.3 (เวอร์ชันปัจจุบัน)", "summary": "เวอร์ชันปัจจุบันของ NAM ที่กำลังใช้งานอยู่และกำลังจะได้รับการอัปเกรด", "details": [ "ระบบปฏิบัติการ: ทำงานบน SUSE Linux Enterprise Server 12 SP4 ซึ่งใกล้จะหมดอายุการสนับสนุน (End-of-Life) ทำให้มีความเสี่ยงด้านความปลอดภัยและขาดการอัปเดตแพตช์", "ส่วนประกอบพื้นฐาน: Apache HTTP Server (เวอร์ชันเก่า), Tomcat Application Server (เวอร์ชันเก่า), OpenSSL (เวอร์ชันเก่า) ซึ่งอาจมีช่องโหว่ที่ทราบแล้วแต่ยังไม่ได้รับการแก้ไข", "ช่องโหว่ความปลอดภัย: อาจมีช่องโหว่ด้านความปลอดภัยที่ยังไม่ถูกแก้ไข (Known Vulnerabilities) ที่อาจถูกโจมตีได้ เช่น Cross-Site Scripting (XSS), SQL Injection, หรือการรั่วไหลของข้อมูล", "คุณสมบัติ: ขาดคุณสมบัติใหม่ๆ ที่มีในเวอร์ชันที่สูงกว่า เช่น การจัดการคอนโซลที่ทันสมัย, REST APIs ที่มีประสิทธิภาพ และการรองรับโปรโตโคอลการยืนันตัวตนใหม่ๆ", "ความซับซ้อนในการจัดการ: การจัดการระบบยังคงใช้หน้าจอแบบเดิมซึ่งอาจไม่เป็นมิตรกับผู้ใช้งานเท่าที่ควร" ] }, 
+            { "id": "v4.5.5", "name": "NetIQ Access Manager 4.5.5 (Patch Update)", "summary": "การอัปเกรดแพตช์สำหรับ NAM 4.5.x เพื่อปรับปรุงพื้นฐานและแก้ไขช่องโหว่เร่งด่วน", "details": [ "อัปเดตส่วนประกอบ: อัปเดต Tomcat เป็นเวอร์ชัน 8.5.72, OpenSSL เป็นเวอร์ชัน 1.0.2za, และ Apache HTTP Server เป็นเวอร์ชัน 2.4.51 เพื่อแก้ไขช่องโหว่ที่พบในเวอร์ชันเก่า", "แก้ไขปัญหาความปลอดภัย: ปรับปรุงการจัดการอักขระพิเศษ (Special Character Handling) เพื่อป้องกันการโจมตีแบบ Injection ที่เกิดจากการป้อนข้อมูลที่ไม่ถูกต้อง", "แก้ไขช่องโหว่ SAML: แก้ไขปัญหาที่เกี่ยวข้องกับ Security Assertion Markup Language (SAML) ซึ่งอาจถูกใช้ในการยืนันตัวตนที่ผิดพลาดหรือการปลอมแปลงข้อมูล (CVEs specific to SAML vulnerabilities if applicable)", "ปรับปรุงความเสถียร: เพิ่มความเสถียรและประสิทธิภาพโดยรวมของระบบด้วยการแก้ไขข้อผิดพลาดเล็กๆ น้อยๆ และปรับปรุงประสิทธิภาพการทำงานของ Core Components" ] }, 
+            { "id": "v5.0.3", "name": "NetIQ Access Manager 5.0.3 (Major Update)", "summary": "การอัปเกรดเวอร์ชันหลักที่มาพร้อมคุณสมบัติใหม่และการแก้ไขช่องโหว่ที่สำคัญ", "details": [ "รองรับ Kerberos Privileged Attribute Certificate (PAC): เพิ่มความสามารถในการจัดการ Kerberos PAC ซึ่งช่วยให้การยืนันตัวตนและการจัดการสิทธิ์ในสภาพแวดล้อม Active Directory มีประสิทธิภาพและปลอดภัยยิ่งขึ้น", "แก้ไขช่องโหว่ Log4j: ปิดช่องโหว่ Apache Log4j ที่ร้ายแรง (CVE-2021-44228, CVE-2021-45046) ซึ่งเป็นช่องโหว่ Zero-day ที่ส่งผลกระทบต่อแอปพลิเคชัน Java จำนวนมากและสามารถนำไปสู่การควบคุมระบบจากระยะไกลได้", "แก้ไขช่องโหว่ Multiple XSS: แก้ไขช่องโหว่ Cross-Site Scripting (XSS) หลายจุด (เช่น CVE-2022-26325) ที่อาจถูกใช้ในการโจมตีผู้ใช้งานโดยการฝัง Script ที่เป็นอันตรายลงในหน้าเว็บ", "อัปเดตส่วนประกอบ: อัปเดต Tomcat เป็นเวอร์ชัน 9.0.65, Apache เป็นเวอร์ชัน 2.4.54 เพื่อเพิ่มประสิทธิภาพและความปลอดภัยของแพลตฟอร์ม", "ปรับปรุงประสิทธิภาพ: มีการปรับปรุงภายในเพื่อเพิ่มประสิทธิภาพการทำงานและลด Latency ในการประมวลผลคำขอ" ] }, 
+            { "id": "v5.1", "name": "NetIQ Access Manager 5.1 (Target Version)", "summary": "เวอร์ชันเป้าหมายที่มีการปรับปรุงครั้งใหญ่ด้านการจัดการ ความปลอดภัย และ REST APIs เพื่อรองรับอนาคต", "details": [ "Enhanced Administration Console (Angular UI): ผู้ดูแลระบบจะได้รับหน้าจอการจัดการใหม่ที่ทันสมัย ใช้งานง่ายขึ้น พัฒนาด้วย Angular UI ซึ่งช่วยเพิ่มประสิทธิภาพในการตั้งค่า, ตรวจสอบ, และแก้ไขปัญหาต่างๆ", "ปรับปรุง REST APIs สำหรับ Automation: RESTful APIs ได้รับการปรับปรุงและขยายขีดความสามารถ ทำให้สามารถทำงานร่วมกับระบบอื่นๆ ได้อย่างราบรื่นยิ่งขึ้น และรองรับการทำงานแบบอัตโนมัติ (Automation) สำหรับงานด้านการจัดการผู้ใช้, แอปพลิเคชัน, และนโยบายต่างๆ", "แก้ไขช่องโหว่ความปลอดภัยเพิ่มเติม: แก้ไขช่องโหว่สำคัญ เช่น Directory Traversal (การเข้าถึงไฟล์นอกเหนือจากที่กำหนด), User Impersonation (การปลอมแปลงเป็นผู้ใช้รายอื่น), และ XSS (Cross-Site Scripting) เพิ่มเติม เพื่อเสริมความแข็งแกร่งของระบบ", "ความสามารถในการบูรณาการที่ดีขึ้น: ช่วยให้สามารถบูรณาการกับระบบ Cloud, Mobile Applications, และ Identity Providers ภายนอกได้อย่างง่ายดาย", "รองรับมาตรฐาน OpenID Connect/OAuth 2.0: ยืนันการรองรับมาตรฐานการยืนันตัวตนและการอนุญาตล่าสุดเพื่อความเข้ากันได้กับแอปพลิเคชันยุคใหม่", "ลด Downtime ในการอัปเกรด: มีการปรับปรุงกระบวนการอัปเกรดให้มีความราบรื่นมากขึ้น ลดเวลาที่ระบบจะต้องหยุดทำงาน" ] } 
+        ],
         upgradeSteps: [
             { "id": "step-aa", "parentId": null, "title": "ติดตั้งและปรับแต่ง NetIQ (AA)", "description": "ดำเนินการติดตั้งและปรับแต่ง NetIQ Advanced Authentication", "startDate": "2025-05-01", "endDate": "2025-05-20", "status": "Completed", "assignee": "Busisoft", "order": 1, "notes":"", "attachments":[] },
             { "id": "step-2-main", "parentId": null, "title": "อัปเกรด NAM (v4.5.3 -> v4.5.5) (Production)", "description": "ดำเนินการอัปเกรด NAM บนระบบจริงเป็นเวอร์ชัน 4.5.5", "startDate": "2025-09-08", "endDate": "2025-09-14", "status": "Not Started", "assignee": "Busisoft", "order": 2, "notes":"", "attachments":[] },
@@ -290,24 +352,26 @@
     };
 
     // --- UI & State Functions ---
-    function updateDbStatus(isConnected, message) {
+    function updateDbStatus(state, message) { // state can be true, false, or 'saving'
         const statusEl = document.getElementById('db-status');
         if (statusEl) {
-             const icon = isConnected 
-            ? `<svg class="w-4 h-4 inline-block mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" /></svg>`
-            : `<svg class="w-4 h-4 inline-block mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>`;
-        
-            statusEl.innerHTML = `${icon} <span>${message}</span>`;
-            statusEl.className = isConnected 
-                ? 'text-xs font-semibold px-2 py-1 rounded status-connected flex items-center' 
-                : 'text-xs font-semibold px-2 py-1 rounded status-disconnected flex items-center';
+            let dotClass = '';
+            if (state === true) dotClass = 'dot-connected';
+            else if (state === false) dotClass = 'dot-disconnected';
+            else if (state === 'saving') dotClass = 'dot-saving';
+            
+            statusEl.innerHTML = `<span class="connection-dot ${dotClass}"></span> <span>${message}</span>`;
         }
     }
+
 
     // --- Data Persistence & Export ---
     async function saveData() {
         try {
+            updateDbStatus('saving', 'กำลังบันทึก...');
             await set(dbRef, projectData);
+            // Auto refresh after save (for mobile fix)
+            setTimeout(() => { window.location.reload(); }, 600);
         } catch (error) {
             console.error("Error saving data to Firebase:", error);
             updateDbStatus(false, 'บันทึกข้อมูลไม่สำเร็จ');
@@ -344,11 +408,14 @@
 
     // --- Core Application Logic ---
     const renderAllContent = () => {
+        document.body.classList.toggle('is-editable', isEditMode);
         renderLayout();
         renderEditableSections();
         renderProgressTable();
         renderProjectTimeline();
         updateChart();
+        renderVersionDetails();
+        updateSectionControls();
     }
     const formatDate = (d) => { if(!d) return ''; try { const dt=new Date(d); return `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()}`; } catch (e) { return ''; } };
     
@@ -372,22 +439,38 @@
     }
     
     function collectChanges() {
+        // Collect from simple containers
+        document.querySelectorAll('[data-editable-container]').forEach(container => {
+            const key = container.dataset.editableContainer;
+            const input = container.querySelector('textarea, input');
+            if (input) {
+                updateProjectData(key, input.value);
+            }
+        });
+
+        // Collect from complex list-based containers
+        // (This logic is now implicitly handled by how the editable fields are structured,
+        // using data-editable-key directly on the inputs)
         document.querySelectorAll('[data-editable-key]').forEach(el => {
             const key = el.dataset.editableKey;
-             const value = el.value;
-             if (value !== undefined) {
+            const value = el.value !== undefined ? el.value : el.innerHTML;
+            if (value !== undefined) {
                  updateProjectData(key, value);
-             }
+            }
         });
     }
 
     function updateProjectData(key, value) {
         const keys = key.split('.');
         let current = projectData;
-        for (let i = 0; i < keys.length - 1; i++) {
-            current = current[keys[i]];
+        try {
+            for (let i = 0; i < keys.length - 1; i++) {
+                current = current[keys[i]];
+            }
+            current[keys[keys.length - 1]] = value;
+        } catch (e) {
+            console.error(`Could not update key: ${key}`, e);
         }
-        current[keys[keys.length - 1]] = value;
     }
 
     const buildTaskTree = () => { 
@@ -406,26 +489,27 @@
     };
 
     // --- Edit Mode & Task Management ---
-    window.toggleEditMode = () => { 
-        isEditMode = !isEditMode; 
-        
-        if (isEditMode) { // Entering Edit mode
+    window.toggleEditMode = async () => { 
+        // This is now an async function
+        if (isEditMode) { // Logic for EXITING edit mode
+            collectChanges();
+            await saveData(); // Wait for save to complete
+            isEditMode = false;
+        } else { // Logic for ENTERING edit mode
             if (sessionStorage.getItem('canEdit') !== 'true') {
                 const password = prompt("กรุณาใส่รหัสผ่านเพื่อแก้ไข:");
                 if (btoa(password) === "YWJjMTIz") {
                     sessionStorage.setItem('canEdit', 'true');
                 } else {
                     alert("รหัสผ่านไม่ถูกต้อง!");
-                    isEditMode = false; // Revert state
-                    return;
+                    return; 
                 }
             }
             undoState = JSON.parse(JSON.stringify(projectData));
-        } else { // Exiting Edit mode
-             collectChanges(); 
-             saveData();
+            isEditMode = true;
         }
         
+        // Update UI based on the new mode
         document.getElementById('edit-icon').classList.toggle('hidden', isEditMode);
         document.getElementById('done-icon').classList.toggle('hidden', !isEditMode);
         document.getElementById('editing-controls').classList.toggle('hidden', !isEditMode);
@@ -443,20 +527,10 @@
         if (confirm('คุณต้องการยกเลิกการแก้ไขทั้งหมดที่ทำในครั้งนี้หรือไม่?')) {
             if (undoState && Object.keys(undoState).length > 0) {
                 projectData = JSON.parse(JSON.stringify(undoState));
-                isEditMode = false; 
-                
-                document.getElementById('edit-icon').classList.remove('hidden');
-                document.getElementById('done-icon').classList.add('hidden');
-                document.getElementById('editing-controls').classList.add('hidden');
-                document.getElementById('editing-controls').classList.remove('flex');
-                document.getElementById('edit-mode-btn').classList.remove('bg-blue-100', 'text-blue-600');
-
-                layoutSortable.option('disabled', true);
-                tableSortable.option('disabled', true);
-
-                renderAllContent();
+                isEditMode = false;
+                setTimeout(() => { window.location.reload(); }, 600);
             }
-        } 
+        }
     };
 
     window.addWidget = () => {
@@ -474,13 +548,21 @@
         renderAllContent();
     }
     
-    window.deleteWidget = (widgetId) => {
-        if (confirm('คุณต้องการลบกล่องข้อความนี้หรือไม่?')) {
-            projectData.customWidgets = projectData.customWidgets.filter(w => w.id !== widgetId);
-            projectData.layout = projectData.layout.filter(id => id !== widgetId);
-            renderAllContent();
+    window.deleteSection = (sectionId) => {
+        if (confirm('คุณต้องการลบส่วนนี้ใช่หรือไม่?')) {
+            const layoutIndex = projectData.layout.indexOf(sectionId);
+            if(layoutIndex > -1) {
+                projectData.layout.splice(layoutIndex, 1);
+            }
+            
+            if(sectionId.startsWith('widget_')) {
+                projectData.customWidgets = projectData.customWidgets.filter(w => w.id !== sectionId);
+            }
+            
+            saveData();
         }
     }
+
 
     window.addTask = () => { 
         const t={id:`t_${Date.now()}`,parentId:null,title:"New Task",description:"",order:projectData.upgradeSteps.length + 1,status:"Not Started",assignee:"",startDate:"",endDate:"",notes:"",attachments:[]}; 
@@ -517,65 +599,94 @@
     window.toggleSubtasks = (tId) => { expandedTasks.has(tId)?expandedTasks.delete(tId):expandedTasks.add(tId); renderProgressTable(); };
 
     // --- UI Rendering ---
+    function updateSectionControls() {
+        document.querySelectorAll('section[data-section-id]').forEach(section => {
+            const sectionId = section.dataset.sectionId;
+            let titleWrapper = section.querySelector('.section-title-wrapper');
+            if(!titleWrapper) return;
+            
+            // Clear old controls
+            titleWrapper.querySelectorAll('.section-drag-handle, .section-delete-btn').forEach(el => el.remove());
+
+            if (isEditMode) {
+                // Add Drag Handle
+                const handle = document.createElement('div');
+                handle.className = 'section-drag-handle';
+                handle.title = 'ลากเพื่อจัดลำดับ';
+                handle.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M10 5.5C10 6.32843 9.32843 7 8.5 7C7.67157 7 7 6.32843 7 5.5C7 4.67157 7.67157 4 8.5 4C9.32843 4 10 4.67157 10 5.5ZM10 12C10 12.8284 9.32843 13.5 8.5 13.5C7.67157 13.5 7 12.8284 7 12C7 11.1716 7.67157 10.5 8.5 10.5C9.32843 10.5 10 11.1716 10 12ZM10 18.5C10 19.3284 9.32843 20 8.5 20C7.67157 20 7 19.3284 7 18.5C7 17.6716 7.67157 17 8.5 17C9.32843 17 10 17.6716 10 18.5ZM17 5.5C17 6.32843 16.3284 7 15.5 7C14.6716 7 14 6.32843 14 5.5C14 4.67157 14.6716 4 15.5 4C16.3284 4 17 4.67157 17 5.5ZM17 12C17 12.8284 16.3284 13.5 15.5 13.5C14.6716 13.5 14 12.8284 14 12C14 11.1716 14.6716 10.5 15.5 10.5C16.3284 10.5 17 11.1716 17 12ZM17 18.5C17 19.3284 16.3284 20 15.5 20C14.6716 20 14 19.3284 14 18.5C14 17.6716 14.6716 17 15.5 17C16.3284 17 17 17.6716 17 18.5Z"></path></svg>`;
+                titleWrapper.appendChild(handle);
+
+                // Add Delete Button (except for the main title section)
+                if (sectionId !== 'title') {
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'section-delete-btn';
+                    deleteBtn.title = 'ลบส่วนนี้';
+                    deleteBtn.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>`;
+                    deleteBtn.onclick = () => deleteSection(sectionId);
+                    titleWrapper.appendChild(deleteBtn);
+                }
+            }
+        });
+    }
+
     function renderLayout() {
         if (!projectData.layout) return;
         const mainContainer = document.getElementById('main-container');
         
-        if (projectData.customWidgets) {
-            projectData.customWidgets.forEach(widget => {
-                let widgetEl = document.querySelector(`[data-section-id="${widget.id}"]`);
-                if (!widgetEl) {
-                    widgetEl = document.createElement('section');
-                    widgetEl.dataset.sectionId = widget.id;
+        // Ensure all sections exist in DOM for SortableJS
+        const allSectionIds = new Set([...projectData.layout, ...(projectData.customWidgets || []).map(w => w.id)]);
+        allSectionIds.forEach(id => {
+            if (!mainContainer.querySelector(`[data-section-id="${id}"]`)) {
+                 const isDefaultSection = defaultProjectData.layout.includes(id);
+                 if (!isDefaultSection) { // It's a custom widget that needs its container created
+                    const widgetEl = document.createElement('section');
+                    widgetEl.dataset.sectionId = id;
                     widgetEl.className = 'mb-20 pt-16 -mt-16';
+                    widgetEl.innerHTML = `<div class="section-title-wrapper mb-12"></div><div class="content-wrapper"></div>`;
                     mainContainer.appendChild(widgetEl);
-                }
-            });
-        }
-        
-        document.querySelectorAll('section[data-section-id^="widget_"]').forEach(el => {
-            if (!projectData.customWidgets || !projectData.customWidgets.find(w => w.id === el.dataset.sectionId)) {
-                el.remove();
+                 }
             }
         });
 
+        // Hide sections not in the layout
+        mainContainer.querySelectorAll('section[data-section-id]').forEach(el => {
+            el.style.display = projectData.layout.includes(el.dataset.sectionId) ? '' : 'none';
+        });
+
+        // Order the sections
         const sections = Array.from(mainContainer.children);
         projectData.layout.forEach(sectionId => {
             const section = sections.find(s => s.dataset.sectionId === sectionId);
             if(section) mainContainer.appendChild(section);
         });
     }
+    
+    // Renders a simple text field that can be toggled to a textarea
+    function renderEditableField(containerSelector, dataKey) {
+        const container = document.querySelector(containerSelector);
+        if (!container) return;
+
+        const keys = dataKey.split('.');
+        let value = projectData;
+        try { keys.forEach(k => { value = value[k]; }); } catch (e) { value = ''; }
+        value = value || '';
+
+        if (isEditMode) {
+            container.innerHTML = `<textarea class="editable-textarea-small">${value}</textarea>`;
+        } else {
+            if (dataKey === 'main.subtitle') {
+                container.innerHTML = `${value}<br><span class="text-sm text-gray-500" id="revision-date">${document.getElementById('revision-date').textContent}</span>`;
+            } else {
+                container.innerHTML = value;
+            }
+        }
+    }
 
     function renderEditableSections() {
-        // Render simple editable fields
-        document.querySelectorAll('[data-editable-key]').forEach(el => {
-            const key = el.dataset.editableKey;
-            const keys = key.split('.');
-            let value = projectData;
-            keys.forEach(k => { value = value ? value[k] : undefined; });
-            
-            if (isEditMode) {
-                const input = document.createElement('textarea');
-                input.className = 'editable-textarea';
-                if (el.tagName === 'P') {
-                    input.classList.remove('editable-textarea');
-                    input.classList.add('editable-textarea-small', 'w-full');
-                     if (el.classList.contains('max-w-3xl')) {
-                        input.classList.add('max-w-3xl', 'mx-auto');
-                    }
-                }
-                input.value = value || '';
-                input.dataset.editableKey = key;
-                el.innerHTML = '';
-                el.appendChild(input);
-            } else {
-                 if (key === 'main.subtitle') {
-                    el.innerHTML = `${value || ''} <br><span class="text-sm text-gray-500" id="revision-date">${document.getElementById('revision-date').textContent}</span>`;
-                } else {
-                    el.innerHTML = value || '';
-                }
-            }
-        });
+        // Render simple editable fields using the robust helper function
+        renderEditableField('[data-editable-container="main.subtitle"]', 'main.subtitle');
+        renderEditableField('[data-editable-container="overview.summary"]', 'overview.summary');
+        renderEditableField('[data-editable-container="improvements.subtitle"]', 'improvements.subtitle');
 
         // Render overview lists
         const icons = { current: '●', target: '✔' };
@@ -667,27 +778,20 @@
             projectData.customWidgets.forEach((widget, index) => {
                 let widgetEl = document.querySelector(`[data-section-id="${widget.id}"]`);
                 if(widgetEl) {
+                    const titleWrapper = widgetEl.querySelector('.section-title-wrapper');
+                    const contentWrapper = widgetEl.querySelector('.content-wrapper') || widgetEl;
                     if(isEditMode) {
-                         widgetEl.innerHTML = `
-                            <div class="relative">
-                                <h2 class="text-3xl font-bold text-center mb-12 section-drag-handle">
-                                    <input class="w-full text-center editable-input" value="${widget.title}" data-editable-key="customWidgets.${index}.title">
-                                </h2>
-                                <button onclick="deleteWidget('${widget.id}')" title="ลบ Widget" class="absolute top-0 right-0 -mt-2 -mr-2 text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-100">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                </button>
-                            </div>
+                        titleWrapper.innerHTML = `<h2 class="text-3xl font-bold text-center"><input class="w-full text-center editable-input" value="${widget.title}" data-editable-key="customWidgets.${index}.title"></h2>`;
+                        contentWrapper.innerHTML = `
                             <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
                                  <textarea class="w-full editable-textarea" data-editable-key="customWidgets.${index}.content">${widget.content}</textarea>
-                            </div>
-                         `;
+                            </div>`;
                     } else {
-                         widgetEl.innerHTML = `
-                            <h2 class="text-3xl font-bold text-center mb-12">${widget.title}</h2>
+                         titleWrapper.innerHTML = `<h2 class="text-3xl font-bold text-center">${widget.title}</h2>`;
+                         contentWrapper.innerHTML = `
                              <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
                                  <p>${widget.content.replace(/\n/g, '<br>')}</p>
-                            </div>
-                         `;
+                            </div>`;
                     }
                 }
             });
@@ -696,62 +800,140 @@
 
     function renderProgressTable() {
         if (!projectData || !projectData.upgradeSteps) return;
-        const tableBody = document.getElementById('progress-table-body');
-        if(!tableBody) return;
-        tableBody.innerHTML = '';
+    const tableBody = document.getElementById('progress-table-body');
+    const cardList = document.getElementById('progress-card-list');
+    if(tableBody) tableBody.innerHTML = '';
+    if(cardList) cardList.innerHTML = '';
         const taskTree = buildTaskTree();
         let mainCounter = 1;
 
         function renderRows(tasks, isSub = false, prefix = '') {
-            tasks.sort((a, b) => a.order - b.order).forEach((task, index) => {
-                const row = document.createElement('tr');
-                const hasChildren = task.children && task.children.length > 0;
-                
-                row.className = `task-row border-b border-gray-200 ${isSub ? 'sub-task-row' : ''} ${isEditMode ? 'is-editable' : ''} ${hasChildren ? 'has-children' : ''}`;
-                row.setAttribute('data-id', task.id);
-
-                const orderText = isSub ? `${prefix}.${index + 1}` : `${mainCounter++}`;
-                
-                const taskCell = isEditMode 
-                    ? `<input class="editable-input font-semibold" value="${task.title}" data-editable-key="upgradeSteps.${projectData.upgradeSteps.findIndex(t => t.id === task.id)}.title">
-                       <textarea class="editable-textarea-small text-xs mt-1" data-editable-key="upgradeSteps.${projectData.upgradeSteps.findIndex(t => t.id === task.id)}.description">${task.description}</textarea>` 
-                    : `<div class="font-semibold">${task.title}</div><div class="text-xs text-gray-500">${task.description}</div>`;
-
-                const toggle = hasChildren ? `<span class="toggle-subtask ${expandedTasks.has(task.id)?'':'collapsed'}" onclick="toggleSubtasks('${task.id}')">▾</span>` : '';
-                
-                const assigneeCell = isEditMode 
-                    ? `<input class="editable-input" value="${task.assignee || ''}" data-editable-key="upgradeSteps.${projectData.upgradeSteps.findIndex(t => t.id === task.id)}.assignee">` 
-                    : `<div class="break-words">${task.assignee || ''}</div>`;
-                
-                const startDateCell = isEditMode
-                    ? `<input type="date" value="${task.startDate}" class="border rounded px-2 py-1 text-sm w-full bg-white" data-editable-key="upgradeSteps.${projectData.upgradeSteps.findIndex(t => t.id === task.id)}.startDate">`
-                    : `<span>${formatDate(task.startDate)}</span>`;
-
-                const endDateCell = isEditMode
-                    ? `<input type="date" value="${task.endDate}" class="border rounded px-2 py-1 text-sm w-full bg-white" data-editable-key="upgradeSteps.${projectData.upgradeSteps.findIndex(t => t.id === task.id)}.endDate">`
-                    : `<span>${formatDate(task.endDate)}</span>`;
-
-                const actions = isEditMode 
-                    ? `<div class="flex items-center">
-                           <button onclick="openNoteModal('${task.id}')" title="หมายเหตุ" class="text-blue-600 p-1 hover:bg-blue-100 rounded"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2z"/><path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5M3 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8m0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5"/></svg></button>
-                           <button onclick="addSubTask('${task.id}')" title="เพิ่ม Sub-task" class="text-green-600 p-1 hover:bg-green-100 rounded"><svg fill="currentColor" width="16" height="16" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg></button>
-                           <button onclick="deleteTask('${task.id}')" title="ลบ Task" class="text-red-600 p-1 hover:bg-red-100 rounded"><svg fill="currentColor" width="16" height="16" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1h-11z"/></svg></button>
-                         </div>`
-                    : `<button onclick="openNoteModal('${task.id}')" class="text-blue-600 hover:text-blue-900 text-xs font-semibold">หมายเหตุ</button>`;
-                
-                const selectStatusClass = task.status === 'Completed' ? 'status-select-completed' : task.status === 'In Progress' ? 'status-select-inprogress' : '';
-                const statusCell = isEditMode
-                    ? `<select class="border rounded px-2 py-1 text-sm w-full font-semibold ${selectStatusClass}" data-editable-key="upgradeSteps.${projectData.upgradeSteps.findIndex(t => t.id === task.id)}.status">
-                           <option value="Not Started" ${task.status === 'Not Started'?'selected':''}>Not Started</option>
-                           <option value="In Progress" ${task.status === 'In Progress'?'selected':''}>In Progress</option>
-                           <option value="Completed" ${task.status === 'Completed'?'selected':''}>Completed</option>
-                          </select>`
-                    : `<div class="flex items-center"><span class="status-dot ${task.status === 'Completed' ? 'bg-green-500' : task.status === 'In Progress' ? 'bg-blue-500' : 'bg-gray-400'}"></span> ${task.status}</div>`;
-
-                const orderCellPadding = isSub ? 'pl-10 pr-6' : 'px-6';
-                row.innerHTML = `<td class="py-4 px-2 text-sm text-gray-400 text-center drag-handle">${isEditMode ? '<svg class="inline-block" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M7 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0m3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0M7 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0m3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0m-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0m3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0m-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0m3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0"/></svg>' : ''}</td><td class="py-4 text-sm text-gray-800 font-bold ${orderCellPadding}"><div class="flex items-center gap-2">${orderText} ${toggle}</div></td><td class="py-4 px-6 text-sm text-gray-900">${taskCell}</td><td class="py-4 px-6 text-sm text-gray-500">${assigneeCell}</td><td class="py-4 px-6 text-sm">${startDateCell}</td><td class="py-4 px-6 text-sm">${endDateCell}</td><td class="py-4 px-6 text-sm">${statusCell}</td><td class="py-4 px-6 text-left text-sm font-medium">${actions}</td>`;
-                tableBody.appendChild(row);
-                if (hasChildren && expandedTasks.has(task.id)) renderRows(task.children, true, orderText);
+            tasks.sort((a, b) => a.order - b.order);
+            // แสดงเฉพาะ task หลักก่อน
+            tasks.forEach((task, index) => {
+                if (!isSub && !task.parentId) {
+                    // Table row (desktop)
+                    if (tableBody) {
+                        const row = document.createElement('tr');
+                        const hasChildren = task.children && task.children.length > 0;
+                        row.className = `task-row border-b border-gray-200 ${isEditMode ? 'is-editable' : ''} ${hasChildren ? 'has-children' : ''}`;
+                        row.setAttribute('data-id', task.id);
+                        const orderText = `${mainCounter}`;
+                        const taskCell = isEditMode 
+                            ? `<input class="editable-input font-semibold" value="${task.title}" data-editable-key="upgradeSteps.${projectData.upgradeSteps.findIndex(t => t.id === task.id)}.title">
+                               <textarea class="editable-textarea-small text-xs mt-1" data-editable-key="upgradeSteps.${projectData.upgradeSteps.findIndex(t => t.id === task.id)}.description">${task.description}</textarea>` 
+                            : `<div class="font-semibold">${task.title}</div><div class="text-xs text-gray-500">${task.description}</div>`;
+                        const toggle = hasChildren ? `<span class="toggle-subtask ${expandedTasks.has(task.id)?'':'collapsed'}" onclick="toggleSubtasks('${task.id}')">▾</span>` : '';
+                        const assigneeCell = isEditMode 
+                            ? `<input class="editable-input" value="${task.assignee || ''}" data-editable-key="upgradeSteps.${projectData.upgradeSteps.findIndex(t => t.id === task.id)}.assignee">` 
+                            : `<div class="break-words">${task.assignee || ''}</div>`;
+                        const startDateCell = isEditMode
+                            ? `<input type="date" value="${task.startDate}" class="border rounded px-2 py-1 text-sm w-full bg-white" data-editable-key="upgradeSteps.${projectData.upgradeSteps.findIndex(t => t.id === task.id)}.startDate">`
+                            : `<span>${formatDate(task.startDate)}</span>`;
+                        const endDateCell = isEditMode
+                            ? `<input type="date" value="${task.endDate}" class="border rounded px-2 py-1 text-sm w-full bg-white" data-editable-key="upgradeSteps.${projectData.upgradeSteps.findIndex(t => t.id === task.id)}.endDate">`
+                            : `<span>${formatDate(task.endDate)}</span>`;
+                        const actions = isEditMode 
+                            ? `<div class="flex items-center">
+                                   <button onclick="openNoteModal('${task.id}')" title="หมายเหตุ" class="text-blue-600 p-1 hover:bg-blue-100 rounded"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2z"/><path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5M3 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8m0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5"/></svg></button>
+                                   <button onclick="addSubTask('${task.id}')" title="เพิ่ม Sub-task" class="text-green-600 p-1 hover:bg-green-100 rounded"><svg fill="currentColor" width="16" height="16" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg></button>
+                                   <button onclick="deleteTask('${task.id}')" title="ลบ Task" class="text-red-600 p-1 hover:bg-red-100 rounded"><svg fill="currentColor" width="16" height="16" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1h-11z"/></svg></button>
+                                 </div>`
+                            : `<button onclick="openNoteModal('${task.id}')" class="text-blue-600 hover:text-blue-900 text-xs font-semibold">หมายเหตุ</button>`;
+                        const selectStatusClass = task.status === 'Completed' ? 'status-select-completed' : task.status === 'In Progress' ? 'status-select-inprogress' : '';
+                        const statusCell = isEditMode
+                            ? `<select class="border rounded px-2 py-1 text-sm w-full font-semibold ${selectStatusClass}" data-editable-key="upgradeSteps.${projectData.upgradeSteps.findIndex(t => t.id === task.id)}.status">
+                                   <option value="Not Started" ${task.status === 'Not Started'?'selected':''}>Not Started</option>
+                                   <option value="In Progress" ${task.status === 'In Progress'?'selected':''}>In Progress</option>
+                                   <option value="Completed" ${task.status === 'Completed'?'selected':''}>Completed</option>
+                                  </select>`
+                            : `<div class="flex items-center"><span class="status-dot ${task.status === 'Completed' ? 'bg-green-500' : task.status === 'In Progress' ? 'bg-blue-500' : 'bg-gray-400'}"></span> ${task.status}</div>`;
+                        const orderCellPadding = 'px-6';
+                        row.innerHTML = `<td class="py-4 px-2 text-sm text-gray-400 text-center drag-handle">${isEditMode ? '<svg class="inline-block" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M7 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0m3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0M7 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0m3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0m-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0m3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0m-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0m3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0"/></svg>' : ''}</td><td class="py-4 text-sm text-gray-800 font-bold ${orderCellPadding}"><div class="flex items-center gap-2">${orderText} ${toggle}</div></td><td class="py-4 px-6 text-sm text-gray-900">${taskCell}</td><td class="py-4 px-6 text-sm text-gray-500">${assigneeCell}</td><td class="py-4 px-6 text-sm">${startDateCell}</td><td class="py-4 px-6 text-sm">${endDateCell}</td><td class="py-4 px-6 text-sm">${statusCell}</td><td class="py-4 px-6 text-left text-sm font-medium">${actions}</td>`;
+                        tableBody.appendChild(row);
+                    }
+                    // Card (mobile)
+                    if (cardList) {
+                        const card = document.createElement('div');
+                        card.className = `mb-4 p-4 rounded-lg border border-gray-200 shadow-sm bg-white`;
+                        const orderText = `${mainCounter}`;
+                        card.innerHTML = `
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="text-xs text-gray-400 font-bold">${orderText}</div>
+                                <div class="flex items-center gap-2">${task.status === 'Completed' ? '<span class="status-dot bg-green-500"></span>' : task.status === 'In Progress' ? '<span class="status-dot bg-blue-500"></span>' : '<span class="status-dot bg-gray-400"></span>'}<span class="text-xs">${task.status}</span></div>
+                            </div>
+                            <div class="font-semibold mb-1">${task.title}</div>
+                            <div class="text-xs text-gray-500 mb-2">${task.description}</div>
+                            <div class="mb-1"><span class="font-medium text-gray-700">ผู้รับผิดชอบ:</span> <span class="text-gray-600">${task.assignee || '-'}</span></div>
+                            <div class="mb-1"><span class="font-medium text-gray-700">วันที่เริ่ม:</span> <span class="text-gray-600">${formatDate(task.startDate)}</span></div>
+                            <div class="mb-1"><span class="font-medium text-gray-700">วันที่สิ้นสุด:</span> <span class="text-gray-600">${formatDate(task.endDate)}</span></div>
+                            <div class="mb-1"><button onclick="openNoteModal('${task.id}')" class="text-blue-600 hover:text-blue-900 text-xs font-semibold">หมายเหตุ</button></div>
+                        `;
+                        cardList.appendChild(card);
+                    }
+                    // sub-task ต่อท้าย
+                    if (task.children && expandedTasks.has(task.id)) {
+                        let subIndex = 1;
+                        task.children.sort((a, b) => a.order - b.order).forEach(sub => {
+                            // Table row (desktop)
+                            if (tableBody) {
+                                const row = document.createElement('tr');
+                                row.className = `task-row border-b border-gray-200 sub-task-row ${isEditMode ? 'is-editable' : ''}`;
+                                row.setAttribute('data-id', sub.id);
+                                const orderText = `${mainCounter}.${subIndex}`;
+                                const taskCell = isEditMode 
+                                    ? `<input class="editable-input font-semibold" value="${sub.title}" data-editable-key="upgradeSteps.${projectData.upgradeSteps.findIndex(t => t.id === sub.id)}.title">
+                                       <textarea class="editable-textarea-small text-xs mt-1" data-editable-key="upgradeSteps.${projectData.upgradeSteps.findIndex(t => t.id === sub.id)}.description">${sub.description}</textarea>` 
+                                    : `<div class="font-semibold">${sub.title}</div><div class="text-xs text-gray-500">${sub.description}</div>`;
+                                const assigneeCell = isEditMode 
+                                    ? `<input class="editable-input" value="${sub.assignee || ''}" data-editable-key="upgradeSteps.${projectData.upgradeSteps.findIndex(t => t.id === sub.id)}.assignee">` 
+                                    : `<div class="break-words">${sub.assignee || ''}</div>`;
+                                const startDateCell = isEditMode
+                                    ? `<input type="date" value="${sub.startDate}" class="border rounded px-2 py-1 text-sm w-full bg-white" data-editable-key="upgradeSteps.${projectData.upgradeSteps.findIndex(t => t.id === sub.id)}.startDate">`
+                                    : `<span>${formatDate(sub.startDate)}</span>`;
+                                const endDateCell = isEditMode
+                                    ? `<input type="date" value="${sub.endDate}" class="border rounded px-2 py-1 text-sm w-full bg-white" data-editable-key="upgradeSteps.${projectData.upgradeSteps.findIndex(t => t.id === sub.id)}.endDate">`
+                                    : `<span>${formatDate(sub.endDate)}</span>`;
+                                const actions = isEditMode 
+                                    ? `<div class="flex items-center">
+                                           <button onclick="openNoteModal('${sub.id}')" title="หมายเหตุ" class="text-blue-600 p-1 hover:bg-blue-100 rounded"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2z"/><path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5M3 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8m0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5"/></svg></button>
+                                           <button onclick="deleteTask('${sub.id}')" title="ลบ Task" class="text-red-600 p-1 hover:bg-red-100 rounded"><svg fill="currentColor" width="16" height="16" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1h-11z"/></svg></button>
+                                       </div>`
+                                    : `<button onclick="openNoteModal('${sub.id}')" class="text-blue-600 hover:text-blue-900 text-xs font-semibold">หมายเหตุ</button>`;
+                                const statusCell = isEditMode
+                                    ? `<select class="border rounded px-2 py-1 text-sm w-full font-semibold" data-editable-key="upgradeSteps.${projectData.upgradeSteps.findIndex(t => t.id === sub.id)}.status">
+                                           <option value="Not Started" ${sub.status === 'Not Started'?'selected':''}>Not Started</option>
+                                           <option value="In Progress" ${sub.status === 'In Progress'?'selected':''}>In Progress</option>
+                                           <option value="Completed" ${sub.status === 'Completed'?'selected':''}>Completed</option>
+                                          </select>`
+                                    : `<div class="flex items-center"><span class="status-dot ${sub.status === 'Completed' ? 'bg-green-500' : sub.status === 'In Progress' ? 'bg-blue-500' : 'bg-gray-400'}"></span> ${sub.status}</div>`;
+                                row.innerHTML = `<td class="py-4 px-2 text-sm text-gray-400 text-center drag-handle"></td><td class="py-4 text-sm text-gray-800 font-bold pl-10 pr-6">${orderText}</td><td class="py-4 px-6 text-sm text-gray-900">${taskCell}</td><td class="py-4 px-6 text-sm text-gray-500">${assigneeCell}</td><td class="py-4 px-6 text-sm">${startDateCell}</td><td class="py-4 px-6 text-sm">${endDateCell}</td><td class="py-4 px-6 text-sm">${statusCell}</td><td class="py-4 px-6 text-left text-sm font-medium">${actions}</td>`;
+                                tableBody.appendChild(row);
+                            }
+                            // Card (mobile)
+                            if (cardList) {
+                                const card = document.createElement('div');
+                                card.className = `mb-4 p-4 rounded-lg border border-gray-200 shadow-sm bg-white ml-4`;
+                                const orderText = `${mainCounter}.${subIndex}`;
+                                card.innerHTML = `
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="text-xs text-gray-400 font-bold">${orderText}</div>
+                                        <div class="flex items-center gap-2">${sub.status === 'Completed' ? '<span class="status-dot bg-green-500"></span>' : sub.status === 'In Progress' ? '<span class="status-dot bg-blue-500"></span>' : '<span class="status-dot bg-gray-400"></span>'}<span class="text-xs">${sub.status}</span></div>
+                                    </div>
+                                    <div class="font-semibold mb-1">${sub.title}</div>
+                                    <div class="text-xs text-gray-500 mb-2">${sub.description}</div>
+                                    <div class="mb-1"><span class="font-medium text-gray-700">ผู้รับผิดชอบ:</span> <span class="text-gray-600">${sub.assignee || '-'}</span></div>
+                                    <div class="mb-1"><span class="font-medium text-gray-700">วันที่เริ่ม:</span> <span class="text-gray-600">${formatDate(sub.startDate)}</span></div>
+                                    <div class="mb-1"><span class="font-medium text-gray-700">วันที่สิ้นสุด:</span> <span class="text-gray-600">${formatDate(sub.endDate)}</span></div>
+                                    <div class="mb-1"><button onclick="openNoteModal('${sub.id}')" class="text-blue-600 hover:text-blue-900 text-xs font-semibold">หมายเหตุ</button></div>
+                                `;
+                                cardList.appendChild(card);
+                            }
+                            subIndex++;
+                        });
+                    }
+                    mainCounter++;
+                }
             });
         }
         renderRows(taskTree);
@@ -935,31 +1117,80 @@
             improvementsChart.update();
         }
     }
-
-    function initializeStaticContent() {
-        const versionDetailsData = [ { "id": "aa", "name": "NetIQ Advanced Authentication (AA)", "summary": "NetIQ Advanced Authentication (AA) ได้รับการติดตั้งและปรับแต่งเพื่อเพิ่มความสามารถในการยืนยันตัวตนขั้นสูง", "details": [ "รองรับ Multi-Factor Authentication (MFA) หลากหลายรูปแบบ เช่น รหัสผ่านครั้งเดียว (OTP), Biometrics (ลายนิ้วมือ, ใบหน้า), Push Notifications", "เพิ่ม Adaptive Authentication Policy: สามารถกำหนดนโยบายความปลอดภัยที่ปรับเปลี่ยนได้ตามบริบทการเข้าถึง (เช่น ตำแหน่งที่ตั้ง, อุปกรณ์ที่ใช้, พฤติกรรมการเข้าสู่ระบบ) เพื่อเพิ่มความปลอดภัยโดยไม่กระทบประสบการณ์ผู้ใช้มากเกินไป", "ลดความเสี่ยงจากการเข้าถึงโดยไม่ได้รับอนุญาต: ด้วยการยืนยันตัวตนที่แข็งแกร่งขึ้น ช่วยป้องกันการโจมตีแบบ Phishing, Credential Stuffing และ Brute-force Attacks", "ปรับปรุงประสบการณ์ผู้ใช้: ด้วยการรวมวิธีการยืนยันตัวตนที่หลากหลายและยืดหยุ่น ทำให้ผู้ใช้สามารถเข้าถึงระบบได้อย่างปลอดภัยและสะดวกสบายยิ่งขึ้น", "รองรับมาตรฐานความปลอดภัยล่าสุด: ช่วยให้องค์กรปฏิบัติตามข้อกำหนดด้าน Regulatory Compliance และมาตรฐานความปลอดภัยข้อมูลที่เข้มงวดขึ้น" ] }, { "id": "v4.5.3", "name": "NetIQ Access Manager 4.5.3 (เวอร์ชันปัจจุบัน)", "summary": "เวอร์ชันปัจจุบันของ NAM ที่กำลังใช้งานอยู่และกำลังจะได้รับการอัปเกรด", "details": [ "ระบบปฏิบัติการ: ทำงานบน SUSE Linux Enterprise Server 12 SP4 ซึ่งใกล้จะหมดอายุการสนับสนุน (End-of-Life) ทำให้มีความเสี่ยงด้านความปลอดภัยและขาดการอัปเดตแพตช์", "ส่วนประกอบพื้นฐาน: Apache HTTP Server (เวอร์ชันเก่า), Tomcat Application Server (เวอร์ชันเก่า), OpenSSL (เวอร์ชันเก่า) ซึ่งอาจมีช่องโหว่ที่ทราบแล้วแต่ยังไม่ได้รับการแก้ไข", "ช่องโหว่ความปลอดภัย: อาจมีช่องโหว่ด้านความปลอดภัยที่ยังไม่ถูกแก้ไข (Known Vulnerabilities) ที่อาจถูกโจมตีได้ เช่น Cross-Site Scripting (XSS), SQL Injection, หรือการรั่วไหลของข้อมูล", "คุณสมบัติ: ขาดคุณสมบัติใหม่ๆ ที่มีในเวอร์ชันที่สูงกว่า เช่น การจัดการคอนโซลที่ทันสมัย, REST APIs ที่มีประสิทธิภาพ และการรองรับโปรโตคอลการยืนยันตัวตนใหม่ๆ", "ความซับซ้อนในการจัดการ: การจัดการระบบยังคงใช้หน้าจอแบบเดิมซึ่งอาจไม่เป็นมิตรกับผู้ใช้งานเท่าที่ควร" ] }, { "id": "v4.5.5", "name": "NetIQ Access Manager 4.5.5 (Patch Update)", "summary": "การอัปเกรดแพตช์สำหรับ NAM 4.5.x เพื่อปรับปรุงพื้นฐานและแก้ไขช่องโหว่เร่งด่วน", "details": [ "อัปเดตส่วนประกอบ: อัปเดต Tomcat เป็นเวอร์ชัน 8.5.72, OpenSSL เป็นเวอร์ชัน 1.0.2za, และ Apache HTTP Server เป็นเวอร์ชัน 2.4.51 เพื่อแก้ไขช่องโหว่ที่พบในเวอร์ชันเก่า", "แก้ไขปัญหาความปลอดภัย: ปรับปรุงการจัดการอักขระพิเศษ (Special Character Handling) เพื่อป้องกันการโจมตีแบบ Injection ที่เกิดจากการป้อนข้อมูลที่ไม่ถูกต้อง", "แก้ไขช่องโหว่ SAML: แก้ไขปัญหาที่เกี่ยวข้องกับ Security Assertion Markup Language (SAML) ซึ่งอาจถูกใช้ในการยืนยันตัวตนที่ผิดพลาดหรือการปลอมแปลงข้อมูล (CVEs specific to SAML vulnerabilities if applicable)", "ปรับปรุงความเสถียร: เพิ่มความเสถียรและประสิทธิภาพโดยรวมของระบบด้วยการแก้ไขข้อผิดพลาดเล็กๆ น้อยๆ และปรับปรุงประสิทธิภาพการทำงานของ Core Components" ] }, { "id": "v5.0.3", "name": "NetIQ Access Manager 5.0.3 (Major Update)", "summary": "การอัปเกรดเวอร์ชันหลักที่มาพร้อมคุณสมบัติใหม่และการแก้ไขช่องโหว่ที่สำคัญ", "details": [ "รองรับ Kerberos Privileged Attribute Certificate (PAC): เพิ่มความสามารถในการจัดการ Kerberos PAC ซึ่งช่วยให้การยืนยันตัวตนและการจัดการสิทธิ์ในสภาพแวดล้อม Active Directory มีประสิทธิภาพและปลอดภัยยิ่งขึ้น", "แก้ไขช่องโหว่ Log4j: ปิดช่องโหว่ Apache Log4j ที่ร้ายแรง (CVE-2021-44228, CVE-2021-45046) ซึ่งเป็นช่องโหว่ Zero-day ที่ส่งผลกระทบต่อแอปพลิเคชัน Java จำนวนมากและสามารถนำไปสู่การควบคุมระบบจากระยะไกลได้", "แก้ไขช่องโหว่ Multiple XSS: แก้ไขช่องโหว่ Cross-Site Scripting (XSS) หลายจุด (เช่น CVE-2022-26325) ที่อาจถูกใช้ในการโจมตีผู้ใช้งานโดยการฝัง Script ที่เป็นอันตรายลงในหน้าเว็บ", "อัปเดตส่วนประกอบ: อัปเดต Tomcat เป็นเวอร์ชัน 9.0.65, Apache เป็นเวอร์ชัน 2.4.54 เพื่อเพิ่มประสิทธิภาพและความปลอดภัยของแพลตฟอร์ม", "ปรับปรุงประสิทธิภาพ: มีการปรับปรุงภายในเพื่อเพิ่มประสิทธิภาพการทำงานและลด Latency ในการประมวลผลคำขอ" ] }, { "id": "v5.1", "name": "NetIQ Access Manager 5.1 (Target Version)", "summary": "เวอร์ชันเป้าหมายที่มีการปรับปรุงครั้งใหญ่ด้านการจัดการ ความปลอดภัย และ REST APIs เพื่อรองรับอนาคต", "details": [ "Enhanced Administration Console (Angular UI): ผู้ดูแลระบบจะได้รับหน้าจอการจัดการใหม่ที่ทันสมัย ใช้งานง่ายขึ้น พัฒนาด้วย Angular UI ซึ่งช่วยเพิ่มประสิทธิภาพในการตั้งค่า, ตรวจสอบ, และแก้ไขปัญหาต่างๆ", "ปรับปรุง REST APIs สำหรับ Automation: RESTful APIs ได้รับการปรับปรุงและขยายขีดความสามารถ ทำให้สามารถทำงานร่วมกับระบบอื่นๆ ได้อย่างราบรื่นยิ่งขึ้น และรองรับการทำงานแบบอัตโนมัติ (Automation) สำหรับงานด้านการจัดการผู้ใช้, แอปพลิเคชัน, และนโยบายต่างๆ", "แก้ไขช่องโหว่ความปลอดภัยเพิ่มเติม: แก้ไขช่องโหว่สำคัญ เช่น Directory Traversal (การเข้าถึงไฟล์นอกเหนือจากที่กำหนด), User Impersonation (การปลอมแปลงเป็นผู้ใช้รายอื่น), และ XSS (Cross-Site Scripting) เพิ่มเติม เพื่อเสริมความแข็งแกร่งของระบบ", "ความสามารถในการบูรณาการที่ดีขึ้น: ช่วยให้สามารถบูรณาการกับระบบ Cloud, Mobile Applications, และ Identity Providers ภายนอกได้อย่างง่ายดาย", "รองรับมาตรฐาน OpenID Connect/OAuth 2.0: ยืนยันการรองรับมาตรฐานการยืนยันตัวตนและการอนุญาตล่าสุดเพื่อความเข้ากันได้กับแอปพลิเคชันยุคใหม่", "ลด Downtime ในการอัปเกรด: มีการปรับปรุงกระบวนการอัปเกร드ให้มีความราบรื่นมากขึ้น ลดเวลาที่ระบบจะต้องหยุดทำงาน" ] } ];
-
-        const ctx=document.getElementById('improvementsChart');
-        if(!ctx)return;
-        improvementsChart = new Chart(ctx,{ type:'doughnut', data: projectData.improvements.chartData, options:{ responsive:true, maintainAspectRatio:false, cutout:'60%', plugins:{ legend:{ position:'bottom' }}, onClick: (evt, elements) => { if (elements.length > 0) { displayImprovementDetails(elements[0].index); }}}});
+    
+    window.displayVersionDetails = (vId, el) => {
+        const d = document.getElementById('version-details-display');
+        if (!d || !projectData.versionDetails) return;
         
-        window.displayVersionDetails=(vId,el)=>{const d=document.getElementById('version-details-display');if(!d)return;document.querySelectorAll('[data-version-id]').forEach(c=>c.classList.remove('bg-blue-50','border-blue-500','shadow-lg'));if(el)el.classList.add('bg-blue-50','border-blue-500','shadow-lg');const v=versionDetailsData.find(v=>v.id===vId);if(v)d.innerHTML=`<h3 class="font-bold text-2xl mb-6 text-primary-blue">${v.name}</h3><div class="space-y-4">${v.details.map(i=>`<div class="flex items-start space-x-4"><div class="flex-shrink-0 w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mt-1"><svg class="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div><p class="text-gray-700">${i}</p></div>`).join('')}</div>`};
-        const versionSelectionArea=document.getElementById('version-selection-area');if(!versionSelectionArea)return;versionSelectionArea.innerHTML=versionDetailsData.map(v=>`<div class="bg-white p-4 rounded-lg shadow-sm border cursor-pointer hover:shadow-md transition-all duration-200" data-version-id="${v.id}" onclick="displayVersionDetails('${v.id}',this)"><h3 class="font-semibold">${v.name}</h3><p class="text-sm text-gray-600">${v.summary}</p></div>`).join('');
-        displayVersionDetails('v4.5.3', document.querySelector('[data-version-id="v4.5.3"]'));
+        if (activeVersionButton) {
+            activeVersionButton.classList.remove('bg-blue-50','border-blue-500','shadow-lg');
+        }
+        if (el) {
+            el.classList.add('bg-blue-50','border-blue-500','shadow-lg');
+            activeVersionButton = el;
+        }
+        
+        const versionIndex = projectData.versionDetails.findIndex(v => v.id === vId);
+        if (versionIndex === -1) {
+            d.innerHTML = ''; // Clear display if not found
+            return;
+        }
+        const v = projectData.versionDetails[versionIndex];
 
-        window.openNoteModal = (tId)=>{ let t=projectData.upgradeSteps.find(t=>t.id===tId);if(!t)return;document.getElementById('modal-title').textContent=`หมายเหตุ: ${t.title}`;document.getElementById('modal-notes').value=t.notes||'';const p=document.getElementById('modal-attachments-preview');p.innerHTML='';if(t.attachments)t.attachments.forEach(s=>{const i=document.createElement('img');i.src=s;i.className='w-full h-auto rounded-md';p.appendChild(i)});document.getElementById('modal-attachment-input').value='';const m=document.getElementById('note-modal');m.classList.remove('hidden');setTimeout(()=>{m.classList.remove('opacity-0');m.querySelector('div').classList.remove('scale-95')},10); document.getElementById('modal-save-btn').onclick = () => saveNote(tId);};
-        window.closeNoteModal=()=>{const m=document.getElementById('note-modal');m.classList.add('opacity-0');m.querySelector('div').classList.add('scale-95');setTimeout(()=>{m.classList.add('hidden')},300)};
-        function saveNote(tId) { const taskIndex = projectData.upgradeSteps.findIndex(t=>t.id===tId); if(taskIndex > -1) { projectData.upgradeSteps[taskIndex].notes = document.getElementById('modal-notes').value; saveData(); } closeNoteModal(); }
-        document.getElementById('modal-attachment-input').addEventListener('change',async(e)=>{const titleEl=document.getElementById('modal-title');if(!titleEl)return; const title=titleEl.textContent.replace('หมายเหตุ: ','');const taskIndex=projectData.upgradeSteps.findIndex(t=>t.title===title);if(taskIndex < 0)return;if(!projectData.upgradeSteps[taskIndex].attachments)projectData.upgradeSteps[taskIndex].attachments=[];for(const f of e.target.files){const r=new FileReader();const p=new Promise(res=>{r.onload=e=>res(e.target.result);r.readAsDataURL(f)});projectData.upgradeSteps[taskIndex].attachments.push(await p)}saveData();openNoteModal(projectData.upgradeSteps[taskIndex].id)});
+        if(isEditMode) {
+            d.innerHTML = `
+                <h3 class="font-bold text-2xl mb-6 text-primary-blue"><input class="w-full editable-input" value="${v.name}" data-editable-key="versionDetails.${versionIndex}.name"></h3>
+                <div class="space-y-4">
+                    ${v.details.map((item, i) => `
+                        <div class="flex items-start space-x-4">
+                            <div class="flex-shrink-0 w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mt-1">
+                                <svg class="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                            </div>
+                            <textarea class="w-full editable-textarea-small" data-editable-key="versionDetails.${versionIndex}.details.${i}">${item}</textarea>
+                        </div>
+                    `).join('')}
+                </div>`;
+        } else {
+             d.innerHTML=`
+                <h3 class="font-bold text-2xl mb-6 text-primary-blue">${v.name}</h3>
+                <div class="space-y-4">
+                    ${v.details.map(i=>`<div class="flex items-start space-x-4"><div class="flex-shrink-0 w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mt-1"><svg class="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div><p class="text-gray-700">${i}</p></div>`).join('')}
+                </div>`;
+        }
+    };
+    
+    function renderVersionDetails() {
+        const versionSelectionArea = document.getElementById('version-selection-area');
+        if (!versionSelectionArea || !projectData.versionDetails) return;
+        
+        let selectedVersionId = 'v4.5.3';
+        if (activeVersionButton) {
+            selectedVersionId = activeVersionButton.dataset.versionId;
+        }
+
+        versionSelectionArea.innerHTML = projectData.versionDetails.map((v, index) => {
+            if (isEditMode) {
+                return `
+                    <div class="bg-white p-4 rounded-lg shadow-sm border" data-version-id="${v.id}" onclick="displayVersionDetails('${v.id}', this)">
+                        <h3 class="font-semibold"><input class="w-full editable-input" value="${v.name}" data-editable-key="versionDetails.${index}.name"></h3>
+                        <p class="text-sm text-gray-600 mt-1"><textarea class="w-full editable-textarea-small" data-editable-key="versionDetails.${index}.summary">${v.summary}</textarea></p>
+                    </div>`;
+            } else {
+                return `
+                    <div class="bg-white p-4 rounded-lg shadow-sm border cursor-pointer hover:shadow-md transition-all duration-200" data-version-id="${v.id}" onclick="displayVersionDetails('${v.id}', this)">
+                        <h3 class="font-semibold">${v.name}</h3>
+                        <p class="text-sm text-gray-600">${v.summary}</p>
+                    </div>`;
+            }
+        }).join('');
+        
+        const newActiveButton = versionSelectionArea.querySelector(`[data-version-id="${selectedVersionId}"]`);
+        displayVersionDetails(selectedVersionId, newActiveButton);
     }
 
-
-    // --- Page Initialization ---
     function initializePage() {
         const mainContainer = document.getElementById('main-container');
         if (!mainContainer) return;
-
-        initializeStaticContent();
         
         const revEl = document.getElementById('revision-date');
         if(revEl) revEl.textContent = `(ปรับปรุงแผน ณ วันที่ ${new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })})`;
@@ -968,13 +1199,22 @@
         document.getElementById('add-widget-btn').addEventListener('click', window.addWidget);
         document.getElementById('cancel-edits-btn').addEventListener('click', window.cancelEdits);
         
+        const ctx=document.getElementById('improvementsChart');
+        if(ctx && projectData.improvements) {
+            improvementsChart = new Chart(ctx,{ type:'doughnut', data: projectData.improvements.chartData, options:{ responsive:true, maintainAspectRatio:false, cutout:'60%', plugins:{ legend:{ position:'bottom' }}, onClick: (evt, elements) => { if (elements.length > 0) { displayImprovementDetails(elements[0].index); }}}});
+        }
+        
+        window.openNoteModal = (tId)=>{ let t=projectData.upgradeSteps.find(t=>t.id===tId);if(!t)return;document.getElementById('modal-title').textContent=`หมายเหตุ: ${t.title}`;document.getElementById('modal-notes').value=t.notes||'';const p=document.getElementById('modal-attachments-preview');p.innerHTML='';if(t.attachments)t.attachments.forEach(s=>{const i=document.createElement('img');i.src=s;i.className='w-full h-auto rounded-md';p.appendChild(i)});document.getElementById('modal-attachment-input').value='';const m=document.getElementById('note-modal');m.classList.remove('hidden');setTimeout(()=>{m.classList.remove('opacity-0');m.querySelector('div').classList.remove('scale-95')},10); document.getElementById('modal-save-btn').onclick = () => saveNote(tId);};
+        window.closeNoteModal=()=>{const m=document.getElementById('note-modal');m.classList.add('opacity-0');m.querySelector('div').classList.add('scale-95');setTimeout(()=>{m.classList.add('hidden')},300)};
+        function saveNote(tId) { const taskIndex = projectData.upgradeSteps.findIndex(t=>t.id===tId); if(taskIndex > -1) { projectData.upgradeSteps[taskIndex].notes = document.getElementById('modal-notes').value; saveData(); } closeNoteModal(); }
+        document.getElementById('modal-attachment-input').addEventListener('change',async(e)=>{const titleEl=document.getElementById('modal-title');if(!titleEl)return; const title=titleEl.textContent.replace('หมายเหตุ: ','');const taskIndex=projectData.upgradeSteps.findIndex(t=>t.title===title);if(taskIndex < 0)return;if(!projectData.upgradeSteps[taskIndex].attachments)projectData.upgradeSteps[taskIndex].attachments=[];for(const f of e.target.files){const r=new FileReader();const p=new Promise(res=>{r.onload=e=>res(e.target.result);r.readAsDataURL(f)});projectData.upgradeSteps[taskIndex].attachments.push(await p)}saveData();openNoteModal(projectData.upgradeSteps[taskIndex].id)});
+
         const tableBody = document.getElementById('progress-table-body');
         if (tableBody) {
             tableSortable = Sortable.create(tableBody, {
                 animation: 150, handle: '.drag-handle', ghostClass: 'sortable-ghost',
                 disabled: !isEditMode, 
                 onEnd: function (evt) {
-                    // This logic needs to be improved to handle subtasks correctly
                     saveData();
                 },
             });
@@ -984,7 +1224,9 @@
             animation: 150, handle: '.section-drag-handle', ghostClass: 'section-ghost',
             disabled: !isEditMode, 
             onEnd: function (evt) {
-                const newLayout = Array.from(mainContainer.children).map(el => el.dataset.sectionId);
+                const newLayout = Array.from(mainContainer.children)
+                                    .filter(el => el.style.display !== 'none')
+                                    .map(el => el.dataset.sectionId);
                 projectData.layout = newLayout;
                 saveData();
             },
@@ -1022,7 +1264,7 @@
                 saveData();
             }
             
-            updateDbStatus(true, 'เชื่อมต่อสำเร็จ');
+            updateDbStatus(true, 'Sync');
             
             if (isInitialLoad) {
                 initializePage();
@@ -1044,4 +1286,3 @@
 </script>
 </body>
 </html>
-
